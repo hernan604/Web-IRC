@@ -47,6 +47,14 @@ xx. Connect from web. use port 8081. Create a new user with a password and some 
 
     Enter the #systems chatroom and start talking.
 
+=head3 External Dependencies
+
+There are some external dependencies that need installation before usage.
+
+Redis
+
+Postgresql
+
 =head3 Integrations
 
 IRC: connect using irc or using web.
