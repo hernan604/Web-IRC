@@ -1,0 +1,66 @@
+=encoding utf8
+=head1 Web::IRC - WI
+
+Web::IRC tool has the goal of making communication better inside teams.
+
+=head2 Description
+
+Disclaimer: This software is in its early stages. Its a quick hack that still must be re-organized and some parts need re-architectured/decoupled so they can be independently replaced by other tools in other languages. Right now everything was done in perl, except the frontend that has javascript (Joose).
+
+Since i am a long time IRC user and wanted to make communications better with my teammates, i created an irc server and called people to come in. In the first day a lot of people came in. Then less people were online day by day. Result: there was not much adoption. One of the reasons is: irc is old and "ugly". Right.
+
+So i thought how can i make this better ? 
+
+Some bad points in irc: 
+
+- It has no historic logs: some people dont want idle inside channel. They want access to channel logs. So a web frontend could solve this problem. 
+
+- It has no search: Standard irc has no search. One must grep their own logs.
+
+So i created Web::IRC tool which has the pupose to bring the chat concept inside projects and lead to better communication across team members.
+
+The Web::IRC tool also can be accessed from IRC and from Web. Web and IRC are integrated, so users can pick their favorite chatting tool. 
+
+Web::IRC could have been a web only project. But thats too simple and too limited... everybody is doing it and there is no secret behind it specially after websockets were invented.
+
+Many IRC users have nice scripts they dont want to leave behind, so Web::IRC was born.
+
+I am very happy to have created this tool. It still needs a lot of polishing, but the proof of concept already proved to myself the tool can be achieved with *perl*!
+
+=head3 Instructions
+
+Create the database: createdb wi
+
+xx. Alter env_vars.sh accordingly
+
+xx. Start the servers:
+
+    cd WI-IRC && sh start_server.sh
+    cd WI-WWW-Mojo && sh start.sh
+
+xx. Connect from irc. use port 40404: 
+    
+    /server localhost 40404
+    /join #systems
+
+xx. Connect from web. use port 8081. Create a new user with a password and some email. (No email will be sent).
+
+    Enter the #systems chatroom and start talking.
+
+=head3 Integrations
+
+IRC: connect using irc or using web.
+
+Youtube: The tool has integration with youtube, try to post a youtube url and see what happens ie: Hi checkout: https://www.youtube.com/watch?v=QjEnjxCJq_0
+
+Many other integrations will be added using the JooseLoader scripts concept which is already under use. Check out the frontend code.
+
+Github Commits: Tool is under development. It will announce in configured channels whenever someone makes a github commit in configured repos.
+
+=head3 LICENSE
+
+GPL - keep the author and contributors name
+
+=head4 AUTHOR
+
+Hernan Lopes
