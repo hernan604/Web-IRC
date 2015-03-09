@@ -1,11 +1,11 @@
 =encoding utf8
 =head1 Web::IRC - WI
 
-Web::IRC tool has the goal of making communication better inside teams.
+Web::IRC tool has the goal of making communication better inside teams. Similar to slack.com
 
 =head2 Description
 
-Disclaimer: This software is in its early stages. Its a quick hack that still must be re-organized and some parts need re-architectured/decoupled so they can be independently replaced by other tools in other languages. Right now everything was done in perl, except the frontend that has javascript (Joose).
+Disclaimer: This software is in its early stages (but its working already). Its a quick hack that still must be re-organized and some parts need re-architectured/decoupled so they can be independently replaced by other tools in other languages. Right now everything was done in perl, except the frontend that has javascript (Joose).
 
 Since i am a long time IRC user and wanted to make communications better with my teammates, i created an irc server and called people to come in. In the first day a lot of people came in. Then less people were online day by day. Result: there was not much adoption. One of the reasons is: irc is old and "ugly". Right.
 
