@@ -1,0 +1,46 @@
+%extends 'wrapper';
+
+<script>
+jloader.load('AppLogin')
+var login = new AppLogin({
+    deps    : []
+});
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        Welcome to the registration process. Fill in your details and click signup.
+    </div>
+    <div class="row">
+        <div class="col-sm-10">
+            <div class="col-sm-4 login">
+                <div class="row">
+                    Email:
+                </div>
+                <div class="row">
+                    <input type="text" id="email" placeholder='your@email.com'/></input>
+                </div>
+                <div class="row">
+                    Username:
+                </div>
+                <div class="row">
+                    <input type="text" id="username" placeholder='username'/></input>
+                </div>
+                <div class="row">
+                    Password:
+                </div>
+                <div class="row">
+                    <input type="password" id="password" placeholder='password'/></input>
+                </div>
+                <div class="row">
+                    <button class='btn register' data-href='/signup/'>Register</button>
+                </div>
+                <ul class="row errors">
+                    
+                </ul>
+            </div>
+            <div class="col-sm-2">
+            </div>
+        </div>
+    </div>
+</div>

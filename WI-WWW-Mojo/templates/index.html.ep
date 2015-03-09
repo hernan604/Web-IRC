@@ -1,0 +1,10 @@
+%extends 'wrapper';
+
+<div class="container-fluid">
+    <div class="row">
+        Welcome
+    </div>
+    <div class="row">
+        <a href="<%= $self->url_for( 'login' ) %>">please login...</a>
+    </div>
+</div>

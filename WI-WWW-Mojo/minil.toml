@@ -1,0 +1,4 @@
+name = "WI-WWW-Mojo"
+# badges = ["travis"]
+module_maker="ModuleBuildTiny"
+

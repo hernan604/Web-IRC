@@ -1,0 +1,52 @@
+<html>
+  <head>
+    <title>WebSocket Client</title>
+    <script
+      type="text/javascript"
+      src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"
+    ></script>
+    <script>
+        $(document).ready( function () {
+          $('#set-nick').click(function(ev) {
+            var target = $( '#nick' );
+            if ( ! target.val() ) return;
+            //tell server my nick.set it into session.
+            $.ajax({
+                url     : '<%= $self->req->url %>',
+                cache   : true,
+                success : function (data) {
+                    //redirect to /chat if success
+                    if ( data && data.redirect ) {
+                        window.location.href = data.redirect;
+                    }
+                },
+                data    : JSON.stringify({
+                    nick : target.val()
+                }),
+                type    : 'PUT',
+                dataType : 'json',
+                contentType : 'application/json',
+                xhrFields: {
+                    withCredentials: true
+                },
+            }); 
+            
+          });
+
+        } )
+    </script>
+    <style type="text/css">
+      textarea {
+          width: 40em;
+          height:10em;
+      }
+    </style>
+  </head>
+<body>
+
+<!-- <h1>Mojolicious + WebSocket</h1> -->
+
+<p><input type="text" id="nick" placeholder='nick'/><button id='set-nick'>enter</button></p>
+
+</body>
+</html>

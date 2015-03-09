@@ -1,0 +1,41 @@
+%extends 'wrapper';
+
+<script>
+jloader.load('AppLogin')
+var login = new AppLogin({
+    deps    : []
+});
+</script>
+
+<div class="container-fluid">
+    <div class="row">
+        Welcome
+    </div>
+    <div class="row">
+        <div class="col-sm-10">
+            <div class="col-sm-4 login">
+                <div class="row">
+                    Username:
+                </div>
+                <div class="row">
+                    <input type="text" id="username" placeholder='username'/></input>
+                </div>
+                <div class="row">
+                    Password:
+                </div>
+                <div class="row">
+                    <input type="password" id="password" placeholder='password'/></input>
+                </div>
+                <div class="row">
+                    <button class='btn login'>Login</button>
+                    <button class='btn signup' data-href='/signup/'>Signup</button>
+                </div>
+                <ul class="row errors">
+                    
+                </ul>
+            </div>
+            <div class="col-sm-2">
+            </div>
+        </div>
+    </div>
+</div>
