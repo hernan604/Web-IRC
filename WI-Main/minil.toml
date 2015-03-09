@@ -1,0 +1,4 @@
+name = "WI-Main"
+# badges = ["travis"]
+module_maker="ModuleBuildTiny"
+
