@@ -9,6 +9,7 @@ Class('ColLeftChannel', {
             init : (function () { return '[role=col-left] .channel-list' })()
         },
         col_middle : { is : "rw" },
+        channel_ul : { is : 'rw' },
 //      deps : {
 //          is      : "rw",
 //          init    : (function() {
@@ -44,16 +45,92 @@ Class('ColLeftChannel', {
             //var class_test1_dep = new ClassTest1Dep1();
             //this.elem.html( "(ClassTest2 + ClassTest1Dep1)" );
             var ul = $('<ul/>');
+            _this.setChannel_ul( ul );
             var channels = ['#systems','#padrao','#teste','#apps'];
             for ( var i = 0, chan; chan = channels[i] ; i++ ) {
-                _this.add_chan( chan, ul );
+                _this.add_chan( chan );
             }
+            var btn_new_chan = $( '<li>' )
+                .addClass( 'new-chan' )
+                .click( function () {
+                  //return __this.modal_join_channel;
+                  //return function (ev, _this ) { 
+                  //    ( function () { return _this.modal_join_channel  } )()
+                  //}
+
+
+                    var modal_tpl = '\
+                        <div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">\
+                            <div class="modal-dialog">\
+                                <div class="modal-content">\
+                                    <div class="modal-header">\
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&amp;times;</button>\
+                                    <h4 class="modal-title" id="myModalLabel">{{title}}</h4>\
+                                    </div>\
+                                    <div class="modal-body">\
+                                        <div class="row">\
+                                            <div class="form-group">\
+                                            <label for="title">Channel name (ie. #channel #channel-name)</label>\
+                                            <input id="name" class="form-control" type="email" placeholder="channel-name">\
+                                            <p class="help-block">Use only letters or numbers. Dont use accents, dont start with numbers, dont use spaces and neither special characters.</p>\
+                                            </div>\
+                                        </div>\
+                                    </div>\
+                                    <div class="modal-footer">\
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>\
+                                        <button type="button" class="btn btn-primary join">Join channel</button>\
+                                </div>\
+                            </div>\
+                          </div>\
+                        </div>\
+                    ';
+
+                    var rendered = $( Mustache.render( modal_tpl, {
+                        title : 'Enter a new channel'
+                    } ) );
+
+                    var input = rendered.find('#name')
+                        .keyup( function ( ev ) {
+                            var target = $( ev.currentTarget );
+                            var last_char = target.val().replace(/(.*)(.)$/g,'$2');
+                            if ( last_char.length && /[^a-zA-Z0-9-]/.test( last_char ) ) {
+                                ev.preventDefault();
+                                ev.stopPropagation();
+                                target.val( target.val().replace(/(.*)(.)$/g,'$1') );
+                                return false;
+                            }
+                        } );
+
+                    var btn_join = rendered.find('.join');
+                    btn_join.click( function ( ev ) {
+                        var chan_name = '#'+input.val();
+                        if ( chan_name.length ) {
+                            //add channel in list
+                            //trigger click in that channel
+                            _this.add_chan( chan_name );
+                            $('[data-chan="'+input.val()+'"]').click();
+                            rendered.modal('hide'); 
+                        }
+                    } )
+
+                    rendered.modal('show'); 
+
+                } )
+                .prependTo( ul )
+                .html( 'join channel ...' )
+                ;
+
             this.elem.html( ul );
         },
         stop : function () {
         },
-        add_chan : function (chan, ul) {
+        modal_join_channel : function ( ev, _this ) {
+
+
+        },
+        add_chan : function (chan ) {
             var _this = this;
+            var ul = _this.channel_ul;
             var li = $('<li/>');
             li.html( chan )
                 .appendTo( ul )
