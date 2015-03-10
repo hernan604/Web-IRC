@@ -52,69 +52,8 @@ Class('ColLeftChannel', {
             }
             var btn_new_chan = $( '<li>' )
                 .addClass( 'new-chan' )
-                .click( function () {
-                  //return __this.modal_join_channel;
-                  //return function (ev, _this ) { 
-                  //    ( function () { return _this.modal_join_channel  } )()
-                  //}
-
-
-                    var modal_tpl = '\
-                        <div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">\
-                            <div class="modal-dialog">\
-                                <div class="modal-content">\
-                                    <div class="modal-header">\
-                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&amp;times;</button>\
-                                    <h4 class="modal-title" id="myModalLabel">{{title}}</h4>\
-                                    </div>\
-                                    <div class="modal-body">\
-                                        <div class="row">\
-                                            <div class="form-group">\
-                                            <label for="title">Channel name (ie. #channel #channel-name)</label>\
-                                            <input id="name" class="form-control" type="email" placeholder="channel-name">\
-                                            <p class="help-block">Use only letters or numbers. Dont use accents, dont start with numbers, dont use spaces and neither special characters.</p>\
-                                            </div>\
-                                        </div>\
-                                    </div>\
-                                    <div class="modal-footer">\
-                                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>\
-                                        <button type="button" class="btn btn-primary join">Join channel</button>\
-                                </div>\
-                            </div>\
-                          </div>\
-                        </div>\
-                    ';
-
-                    var rendered = $( Mustache.render( modal_tpl, {
-                        title : 'Enter a new channel'
-                    } ) );
-
-                    var input = rendered.find('#name')
-                        .keyup( function ( ev ) {
-                            var target = $( ev.currentTarget );
-                            var last_char = target.val().replace(/(.*)(.)$/g,'$2');
-                            if ( last_char.length && /[^a-zA-Z0-9-]/.test( last_char ) ) {
-                                ev.preventDefault();
-                                ev.stopPropagation();
-                                target.val( target.val().replace(/(.*)(.)$/g,'$1') );
-                                return false;
-                            }
-                        } );
-
-                    var btn_join = rendered.find('.join');
-                    btn_join.click( function ( ev ) {
-                        var chan_name = '#'+input.val();
-                        if ( chan_name.length ) {
-                            //add channel in list
-                            //trigger click in that channel
-                            _this.add_chan( chan_name );
-                            $('[data-chan="'+input.val()+'"]').click();
-                            rendered.modal('hide'); 
-                        }
-                    } )
-
-                    rendered.modal('show'); 
-
+                .click( function ( ev ) {
+                    _this.modal_join_channel( ev );
                 } )
                 .prependTo( ul )
                 .html( 'join channel ...' )
@@ -124,7 +63,66 @@ Class('ColLeftChannel', {
         },
         stop : function () {
         },
-        modal_join_channel : function ( ev, _this ) {
+        modal_join_channel : function ( ev ) {
+            var _this = this;
+            var modal_tpl = '\
+                <div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">\
+                    <div class="modal-dialog">\
+                        <div class="modal-content">\
+                            <div class="modal-header">\
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&amp;times;</button>\
+                            <h4 class="modal-title" id="myModalLabel">{{title}}</h4>\
+                            </div>\
+                            <div class="modal-body">\
+                                <div class="row">\
+                                    <div class="form-group">\
+                                    <label for="title">Channel name (ie. #channel #channel-name)</label>\
+                                    <input id="name" class="form-control" type="email" placeholder="channel-name">\
+                                    <p class="help-block">Use only letters or numbers. Dont use accents, dont start with numbers, dont use spaces and neither special characters.</p>\
+                                    </div>\
+                                </div>\
+                            </div>\
+                            <div class="modal-footer">\
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>\
+                                <button type="button" class="btn btn-primary join">Join channel</button>\
+                        </div>\
+                    </div>\
+                  </div>\
+                </div>\
+            ';
+
+            var rendered = $( Mustache.render( modal_tpl, {
+                title : 'Enter a new channel'
+            } ) );
+
+            var input = rendered.find('#name')
+                .keyup( function ( ev ) {
+                    var target = $( ev.currentTarget );
+                  //var last_char = target.val().replace(/(.*)(.)$/g,'$2');
+                    var btn_join = rendered.find('.join');
+                    if ( target.val().length && /[^a-zA-Z0-9-]/.test( target.val() ) ) {
+                        target.addClass('has-error');
+                        btn_join.addClass('disabled').removeClass('btn-primary');
+                    } else {
+                        target.removeClass('has-error');
+                        btn_join.addClass('btn-primary').removeClass('disabled');
+                    }
+                } );
+
+            var btn_join = rendered.find('.join');
+            btn_join.click( function ( ev ) {
+                var chan_name = '#'+input.val();
+                if ( chan_name.length ) {
+                    if ( input.hasClass( 'has-error' ) ) return;
+                    //add channel in list
+                    //trigger click in that channel
+                    _this.add_chan( chan_name );
+                    $('[data-chan="'+input.val()+'"]').click();
+                    rendered.modal('hide'); 
+                }
+            } )
+
+            rendered.modal('show'); 
 
 
         },

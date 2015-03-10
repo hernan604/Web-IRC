@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/v1/css/styles.css">
     <script type="text/javascript" src="http://cdn.rawgit.com/hernan604/JooseLoader/master/js/joose.js"></script>
     <script type="text/javascript" src="/v1/js/JooseLoader.js"></script>
+    <script type="text/javascript" src="/v1/css/styles.css"></script>
     <script>
     window.jloader = new JooseLoader({
         prefix : '/v1/js/app/',
