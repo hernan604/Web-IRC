@@ -11,4 +11,17 @@ sub channel_list {
     });
 }
 
+sub list_users {
+    my $self = shift;
+    my $req = $self->ua->put(
+        $self->endpoint->{list_users} => {
+            Accept => 'application/json' 
+        },
+        json => {
+            channel => $self->param('channel')
+        }
+    );
+    $self->render( json => $req->res->json );
+}
+
 1;

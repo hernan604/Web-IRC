@@ -9,14 +9,40 @@ use WI::Main;
 use WI::WWW::Mojo::Nick;
 use Mojo::Pg;
 use WI::DB;
+use Mojo::UserAgent;
+use Mojo::Redis2;
 
 our $VERSION = "0.01";
 my $channels = [];
+
+sub init_redis {
+    my $self = shift;
+    $self->helper( redis => sub { Mojo::Redis2->new } );
+    $self->redis->rpush('main_incoming_irc', '{"action":"cleanup"}');
+}
+
+sub init_enpoint {
+    my $self = shift;
+    $self->helper(
+        queue => sub { {
+            main_incoming_irc => 'main_incoming_irc', #irc to main
+            main_incoming_web => 'main_incoming_web', #web to main
+            web_incoming_main => 'web_incoming_main', #main to web
+            irc_incoming_main => 'irc_incoming_main', #main to irc
+        } }
+    );
+
+    $self->helper( endpoint => sub {{
+        list_users => 'http://127.0.0.1:9999/v1/:channel/list_users',
+    }} );
+}
 
 sub startup {
     my $self = shift;
     $self->sessions->cookie_name( 'wi' );
     $self->sessions->default_expiration( 24*60*60*365 );#1 year
+    $self->init_enpoint;
+    $self->init_redis;
 
     my $r    = $self->routes;
     $r->namespaces( ['WI::WWW::Mojo::Controller'] );
@@ -48,7 +74,10 @@ sub startup {
     $r->route('/channel/list')->name('channel_list')
       ->to( controller => 'Channel', action => 'channel_list' );
 
-    $self->helper( redis => sub { Redis->new } );
+    $r->route('/channel/list_users/:channel')->name('list_users')
+      ->to( controller => 'Channel', action => 'list_users' );
+
+#   $self->helper( redis => sub { Redis->new } );
 
     $self->helper( channels => sub { $channels } );    #array with channels
 
@@ -69,6 +98,7 @@ sub startup {
             $db
         }
     );
+
 }
 
 #get '/' => 'index';
@@ -112,35 +142,6 @@ sub kick_user {
 }
 
 my $clients = {};
-
-#websocket '/echo' => sub {
-#   my $self = shift;
-#   $self->inactivity_timeout(300);
-
-#   app->log->debug(sprintf 'Client connected: %s', $self->tx);
-#   my $id = sprintf "%s", $self->tx;
-#   $clients->{$id} = $self->tx;
-
-#   $self->on(message => sub {
-#       my ($self, $msg) = @_;
-
-#       my $dt   = DateTime->now( time_zone => 'Asia/Tokyo');
-
-#       for (keys %$clients) {
-#           $clients->{$_}->send({json => {
-#               hms  => $dt->hms,
-#               text => $msg,
-#           }});
-#       }
-#   });
-
-#   $self->on(finish => sub {
-#       app->log->debug('Client disconnected');
-#       delete $clients->{$id};
-#   });
-#};
-
-#app->start;
 
 1;
 __END__

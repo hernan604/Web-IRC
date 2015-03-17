@@ -3,6 +3,7 @@ use Moo;
 use DDP;
 with qw|WI::DB::Role::Common|;
 use WI::DB::ChannelLog;
+use WI::DB::UserChannel;
 
 has table_name => ( is => 'rw', default => sub { '"Channel"' } );
 has app        => ( is => 'rw' );
@@ -22,5 +23,20 @@ has log => (
         $channel_log;
     }
 );
+
+has user_channel => (
+    is      => 'lazy',
+    default => sub {
+        my $self = shift;
+        return WI::DB::UserChannel->new( app => $self->app );
+    }
+);
+
+sub list_users {
+    my $self = shift;
+    $self->user_channel->search( {
+        channel_id => $self->id
+    } );
+}
 
 1;

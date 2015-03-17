@@ -71,7 +71,7 @@ Class('AppChatEvent', {
             _this.ws.onmessage = function (msg) {
                 console.log(msg);
               var res = JSON.parse(msg.data);
-                   if ( res.action == 'msg' )   { _this.msg(res)  }
+                   if ( res.action == 'message' )   { _this.msg(res)  }
               else if ( res.action == 'join' )  { _this.join(res) }
               else if ( res.action == 'part' )  { _this.part(res) }
             };

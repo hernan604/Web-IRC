@@ -103,3 +103,6 @@ input.has-error {
     border-radius : 0px 5px 5px 0px;
     width : 225px;
 }
+.backdrop-transparent .modal-backdrop {
+    opacity: 0!important;
+}

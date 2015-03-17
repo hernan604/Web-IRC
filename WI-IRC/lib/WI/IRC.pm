@@ -8,25 +8,21 @@ use JSON::XS qw|encode_json decode_json|;
 use IRC::Utils qw|matches_mask|;
 use Mojo::Pg;
 
-use lib '../WI-Main/lib';
+#use lib '../WI-Main/lib';
 use lib '../WI-DB/lib';
-use WI::Main;
+#use WI::Main;
 use Encode qw|encode decode|;
 use WI::DB;
+use Redis;
 use utf8;
 
 my $queue_from_irc = 'from_irc';
+my $redis = Redis->new;
 
-
-my $pg = Mojo::Pg->new( $ENV{WI_MOJO_PG_DSN} );
-$pg->max_connections(5);
-$pg->options( { pg_enable_utf8 => 0, } );
-my $db = WI::DB->new(
-    pg                  => $pg,
-    filepath_migrations => '../WI-DB/migrations.sql',
-);
-
-my $wi_main = WI::Main->new( queue_from_irc => $queue_from_irc, db => $db );
+sub BUILD {
+    my $self = shift;
+    $redis->rpush('main_incoming_irc', '{"action":"cleanup"}'); #del online irc users
+}
 
 has ircd => ( is => "rw" );
 
@@ -136,23 +132,18 @@ sub IRCD_daemon_public {
 
     if ( $self->find_nick($nick) && !$self->is_spoofed($nick) ) {
 
+        my $item = {
+            action => 'message',
+            nick   => $nick,
+           #msg    => decode('UTF-8',"$$msg"),
+            msg    => "$$msg",
+            ident  => $ident,
+            host   => $host,
+            target => "$$chan",
+        };
         #someone typed a message in irc.
-        $wi_main->irc->message_public(
-            {
-                method => 'rpush',
-                queue  => $queue_from_irc,
-                obj    => {
-                    source => 'irc',
-                    action => 'msg',
-                    nick   => $nick,
-                   #msg    => decode('UTF-8',"$$msg"),
-                    msg    => "$$msg",
-                    ident  => $ident,
-                    host   => $host,
-                    target => "$$chan",
-                }
-            }
-        );
+       #$wi_main->irc->message_public( $item );
+        $redis->rpush('main_incoming_irc', encode_json $item );
     }
 
     #insert into message_public
@@ -176,23 +167,15 @@ sub IRCD_daemon_privmsg {
 sub IRCD_daemon_join {
     my ( $self, $ircd, $hostname, $chan ) = @_;
     my ( $nick, $ident, $host ) = @{ $self->hostname_parse("$$hostname") };
-    my $queue_name = 'from_irc';
-    my $nick_info = $self->find_nick($nick);
     if ( $self->find_nick($nick) && !$self->is_spoofed($nick) ) {
-        $wi_main->irc->channel_join(
-            {
-                method => 'rpush',
-                queue  => $queue_from_irc,
-                obj    => {
-                    source  => 'irc',
-                    action  => 'join',
-                    nick    => $nick,
-                    target => "$$chan",
-                    ident   => $ident,
-                    host    => $host,
-                }
-            }
-        );
+        my $item = {
+            action  => 'join',
+            nick    => $nick,
+            target => "$$chan",
+            ident   => $ident,
+            host    => $host,
+        };
+        $redis->rpush('main_incoming_irc', encode_json $item );
     }
 }
 
@@ -211,23 +194,15 @@ sub IRCD_daemon_quit {
 sub IRCD_daemon_part {
     my ( $self, $ircd, $hostname, $chan ) = @_;
     my ( $nick, $ident, $host ) = @{ $self->hostname_parse("$$hostname") };
-    my $queue_name = 'from_irc';
-    my $nick_info = $self->find_nick($nick);
     if ( $self->find_nick($nick) && !$self->is_spoofed($nick) ) {
-        $wi_main->irc->channel_part(
-            {
-                method => 'rpush',
-                queue  => $queue_from_irc,
-                obj    => {
-                    source  => 'irc',
-                    action  => 'part',
-                    nick    => $nick,
-                    target  => "$$chan",
-                    ident   => $ident,
-                    host    => $host,
-                }
-            }
-        );
+        my $item = {
+            action  => 'part',
+            nick    => $nick,
+            target  => "$$chan",
+            ident   => $ident,
+            host    => $host,
+        };
+        $redis->rpush('main_incoming_irc', encode_json $item );
     }
 }
 

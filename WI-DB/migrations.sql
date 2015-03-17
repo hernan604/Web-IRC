@@ -37,3 +37,19 @@ ALTER TABLE "ChannelLog" ADD COLUMN source text;
 -- 5 up
 
 ALTER TABLE "ChannelLog" ADD COLUMN action text;
+
+-- 6 up
+
+CREATE TABLE "UserChannel" (
+    user_id     integer     NOT NULL    REFERENCES "User"(id),
+    channel_id  integer     NOT NULL    REFERENCES "Channel"(id),
+    created     timestamp   without time zone default (now() at time zone 'utc'),
+    PRIMARY KEY ( user_id, channel_id ) 
+);
+
+-- 7 up
+
+ALTER TABLE "UserChannel" ADD COLUMN id serial;
+ALTER TABLE "UserChannel" ADD COLUMN source text;
+
+

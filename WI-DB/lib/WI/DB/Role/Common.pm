@@ -11,9 +11,9 @@ sub new_with {
 }
 
 sub find_or_create {
-    my $self = shift;
-    my $args = shift;
-    my $results = $self->pg_find($args);
+    my $self        = shift;
+    my $args        = shift;
+    my $results     = $self->pg_find($args);
     if ( $results->rows ) {
         return $self->new_with( $results->hash );
     }
@@ -23,8 +23,8 @@ sub find_or_create {
 }
 
 sub insert {
-    my $self = shift;
-    my $args = shift;
+    my $self        = shift;
+    my $args        = shift;
     my ( $stmt, @values ) = $self->app->sql->insert( $self->table_name, $args, { returning => 'id' } );
     my $result = $self->app->pg->db->query( $stmt, @values );
     $self->find( $result->hash );
@@ -53,6 +53,15 @@ sub search {
     my $args         = shift || {};
     my $order_by     = shift || {};
     my ( $stmt, @values ) = $self->app->sql->select( $self->table_name, '*' , $args, $order_by );
+    my $results = $self->app->pg->db->query( $stmt, @values );
+    $results;
+}
+
+sub delete {
+    my $self         = shift;
+    my $args         = shift || {};
+warn "DELETE";
+    my ( $stmt, @values ) = $self->app->sql->delete( $self->table_name, $args );
     my $results = $self->app->pg->db->query( $stmt, @values );
     $results;
 }

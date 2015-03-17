@@ -25,7 +25,8 @@ Class('AppChatControl', {
             for (var i=0, myclass; myclass = this.deps[i]; i++) {
             console.log('iinit '+myclass);
                 var myinstance = new myclass({
-                    app : _this
+                    app : _this.app,
+                    parent : _this,
                 });
                 ( myinstance.init )
                     ? myinstance.init()

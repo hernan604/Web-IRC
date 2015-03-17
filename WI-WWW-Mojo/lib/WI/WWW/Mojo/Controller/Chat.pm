@@ -4,7 +4,7 @@ use Mojo::Redis2;
 use DateTime;
 use DDP;
 use JSON::XS qw|decode_json encode_json|;
-use Redis;
+#use Redis;
 use utf8;
 use Encode qw(decode encode);
 #use strict;
@@ -12,46 +12,12 @@ use Encode qw(decode encode);
 
 my $redis = Mojo::Redis2->new;
 
-#   sub chat_enter {
-#       my $self = shift;
-#       $self->respond_to(
-#           html => sub {
-#               my $self = shift;
-#               $self->render('chat.enter');
-#           },
-#           json => sub {
-#               if ( $self->req->method eq 'PUT' ) {
-#                   #each user must have unique nicks - this will happen during registration.
-#                   #when the user logs in, the nick will be saved into user session.
-#   #               my $nick = $self->req->param('nick');
-#                   my $nick = $self->tx->req->json->{ nick } ;
-#                   $self->session({ nick  => $nick });
-
-#                   $self->send_to_ircd({
-#                       to => 'ircd',
-#                       action => 'add_spoofed_nick',
-#                       args => {
-#                           nick   => $nick,
-#                       }
-#                   } );
-
-
-#   #               $self->redirect_to('chat');
-#                   $self->render( 'json' => {
-#                       redirect => '/chat/' #put this in a json type of req
-#                   } );
-#               }
-#           }
-#       );
-#   }
-
 sub send_to_ircd {
-#   use DDP;
-#   warn p @_;
     my $self = shift;
     my $args = shift;
     warn 'SEND TO IRCD';
-    $redis->rpush( 'actions' , encode_json $args ) if defined $args;
+    my $queue = $self->queue->{main_incoming_web};
+    $self->redis->rpush( $queue, encode_json $args) if defined $args;
 }
 
 sub chat {
@@ -59,7 +25,8 @@ sub chat {
     $self->respond_to(
         html => sub {
             my $self = shift;
-            $self->redirect_to( '/login' ) and return if ( ! $self->session->{ nick } );
+            $self->redirect_to( '/login' ) 
+                and return if ( ! $self->session->{ nick } );
             $self->render( 'chat' );
         }
     );
@@ -76,56 +43,45 @@ sub chat_ws {
     my $channel = $self->param('channel');
 
     if ( ! $self->nick->is_connected( $nick ) ) {
-        $self->send_to_ircd( {
-            to      => 'ircd',
-            action  => 'add_spoofed_nick',
-            args    => {
-                nick   => $nick,
-            }
-        } ) ;
+        $self->redis->rpush( 'main_incoming_web', encode_json {
+            action  => 'connect',
+            nick    => $self->session('nick'),
+        } );
     }
 
     my $queue = 'actions';
     my $chan = '#'.$self->param('channel');
 
-    $self->send_to_ircd( {
-        to      => 'ircd',
+    my $queue = $self->queue->{main_incoming_web};
+    $self->redis->rpush( $queue, encode_json {
         action  => 'join',
-        args => {
-            nick    => $self->session('nick'),
-            channel => $chan
-        }
+        target  => $chan,
+        nick    => $self->session('nick'),
     } );
 
-    $self->wi_main->web->channel_join( { 
-        queue => $queue, 
-        obj => {
-            target  => $chan,
-            nick    => $self->session('nick'),
-        }
-    } ) ;
-
-
-#   my $clients = {};
     $self->on(message => sub {
         my ( $self, $args ) = @_; 
         #user wrote a message
         my $dt   = DateTime->now( time_zone => 'America/Sao_Paulo' );
         my $args = decode_json encode('UTF-8', $args );#* * * TODO: Validate if $args is json  before decodde_json
-        $args->{ nick  } = $self->session('nick');
+        $args->{ nick } = $self->session('nick');
         $args->{ channel } = '#'.$self->param('channel');
         $args->{ source } = 'web';
 
-        $self->wi_main->web->message_public( { queue => $queue, obj => $args } ) 
-            if ( $args->{action} eq 'msg' )
-            and $self->nick->is_in_chan($nick, $chan);
+        my $queue = $self->queue->{main_incoming_web};
+        $self->redis->rpush( $queue, encode_json {
+            action  => 'message',
+            channel => '#'.$self->param('channel'),
+            msg     => $args->{ msg },
+            nick    => $self->session('nick')
+        } ) if $self->nick->is_in_chan($nick, $chan);
 
         my $ws_path = '/chat_ws/'. $self->param('channel');
 
         for (keys %$clients) {
             if ( $clients->{$_} && $clients->{$_}->req && $clients->{$_}->req->url eq $ws_path ) {
                 $clients->{$_}->send({json => {
-                    action  => 'msg',
+                    action  => 'message',
                     hms     => $dt->hms,
                     text    => $args->{msg},
                     source  => 'web',
@@ -139,25 +95,12 @@ sub chat_ws {
         delete $clients->{$id};
         $self->nick->part( $nick, $chan );
 
-
-        $self->send_to_ircd( {
-            to      => 'ircd',
+        my $queue = $self->queue->{main_incoming_web};
+        $self->redis->rpush( $queue, encode_json { 
+            target  => $chan,
+            nick    => $self->session('nick'),
             action  => 'part',
-            args => {
-                nick    => $self->session('nick'),
-                channel => $chan
-            }
-        } );
-
-        $self->wi_main->web->channel_part( { 
-            queue => $queue, 
-            obj => {
-                target  => $chan,
-                nick    => $self->session('nick'),
-                action  => 'part',
-            }
-        } ) ;
-
+        } )
     });
     
     $self->blpop($clients, $chan);
@@ -168,7 +111,7 @@ sub blpop {
     my $self = shift;
     my $clients = shift;
     my $chan = shift;
-    my @keys = ('from_irc');
+    my @keys = ('web_incoming_main');
     my $timeout = 0;
 
     $redis->blpop( @keys, $timeout, sub {
@@ -202,15 +145,9 @@ sub from_redis {
 sub msg_from_irc {
     my ( $self, $clients, $res, $redis, $err, $val, $ws_path ) = @_;
     return 0 if !$val || !$val->{source} || !$val->{nick} || !$val->{msg};
-    return 0 if $val->{action} ne 'msg';
+    return 0 if $val->{action} ne 'message';
     #my $val = decode_json $res;
     my $dt   = DateTime->now( time_zone => 'America/Sao_Paulo' );
-
-#   my $target = $val->{target};
-#   $target =~ s|^#||;
-#   my $chan_from_queue = $res->[0]; 
-#   $chan_from_queue =~ s|^from_irc#||; 
-
 
     for (keys %$clients) {
         if ($clients->{$_} && $clients->{$_}->req && $clients->{$_}->req->url eq $ws_path ) {
@@ -229,13 +166,12 @@ sub msg_from_irc {
 
 sub channel_join {
     my ( $self, $clients, $res, $redis, $err, $val, $ws_path ) = @_;
-    return 0 if !$val || !$val->{source} || !$val->{target} || !$val->{action} || $val->{action} ne 'join';
-#   my $dt   = DateTime->now( time_zone => 'America/Sao_Paulo' );
-#   for (keys %$clients) {
-#       if ($clients->{$_} && $clients->{$_}->req && $clients->{$_}->req->url eq $ws_path ) {
-#           $clients->{$_}->send({ json => $val }); # * * * security  problem here... must filter before forwaring to users
-#       }
-#   }
+    return 0 if 
+        !$val || 
+        !$val->{source} || 
+        !$val->{target} || 
+        !$val->{action} || 
+        $val->{action} ne 'join';
     my $dt   = DateTime->now( time_zone => 'America/Sao_Paulo' );
     $self->nick->join( $val->{nick}, $val->{target} );
 
@@ -285,52 +221,5 @@ sub root {
         }
     );
 }
-
-#   sub irc_ws {
-#       #receive messages from irc
-#       my $self = shift;
-#       $self->inactivity_timeout(60*60*24);
-
-#       my $id = sprintf "%s", $self->tx;
-#       $clients->{$id} = $self->tx;
-
-
-#       $self->blpop($clients);
-
-#   #   while (1) {
-#   #       my $val = $redis->blpop('input', 0);
-#   #       if ( $val and ref $val eq ref [] ) {
-#   #           $val->[1] = decode_json $val->[1];
-#   #       }
-#   #       warn "RECEIVED:"; 
-#   #       warn p $val;
-#   #       my $dt   = DateTime->now( time_zone => 'America/Sao_Paulo' );
-#   #                                                                     
-#   #       for (keys %$clients) {
-#   #           $clients->{$_}->send({json => {
-#   #               hms  => $dt->hms,
-#   #               text => $val->[1],
-#   #           }});
-#   #       }
-
-#   #   }
-
-#   #   $self->on(message => sub {
-#   #       my ($self, $msg) = @_;
-
-#   #       my $dt   = DateTime->now( time_zone => 'America/Sao_Paulo' );
-
-#   #       for (keys %$clients) {
-#   #           $clients->{$_}->send({json => {
-#   #               hms  => $dt->hms,
-#   #               text => $msg,
-#   #           }});
-#   #       }
-#   #   });
-
-#       $self->on(finish => sub {
-#           delete $clients->{$id};
-#       });
-#   }
 
 1;

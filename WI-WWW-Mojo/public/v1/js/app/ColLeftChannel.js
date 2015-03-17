@@ -76,7 +76,7 @@ Class('ColLeftChannel', {
                             <div class="modal-body">\
                                 <div class="row">\
                                     <div class="form-group">\
-                                    <label for="title">Channel name (ie. #channel #channel-name)</label>\
+                                    <label for="title">Channel name (ie. channel channel-name)</label>\
                                     <input id="name" class="form-control" type="email" placeholder="channel-name">\
                                     <p class="help-block">Use only letters or numbers. Dont use accents, dont start with numbers, dont use spaces and neither special characters.</p>\
                                     </div>\
@@ -84,7 +84,7 @@ Class('ColLeftChannel', {
                             </div>\
                             <div class="modal-footer">\
                                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>\
-                                <button type="button" class="btn btn-primary join">Join channel</button>\
+                                <button type="button" class="btn btn-success join">Join channel</button>\
                         </div>\
                     </div>\
                   </div>\

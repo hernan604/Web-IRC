@@ -5,6 +5,7 @@ use JSON::XS qw|encode_json decode_json|;
 my $r     = Redis->new;
 my $queue = 'actions';
 use POE::Session;
+use DDP;
 
 has heap => ( is => "rw" );
 
@@ -50,10 +51,17 @@ sub handler_increment {
 
         #       warn " GOT VAL: $res " x 100;
         $res = decode_json $res;
+        return if ! exists $res->{action};
         #$res->{ action } = add_spoofed_nick
         #$_heap->{ircd}->yield( $res->{ action } => $res->{ args } );
-        if ( $res->{action} eq 'add_spoofed_nick' ) {
-            $_heap->{ircd}->yield( $res->{action} => $res->{args} );
+        warn p $res;
+        if ( $res->{action} eq 'connect' ) {
+            warn "SPOOFED NICK";
+            $_heap->{ircd}->yield( 
+                add_spoofed_nick => { 
+                    nick => $res->{nick} 
+                } 
+            );
 
             #} elsif ( $res->{ action } eq 'add_op' ) {
             #    #give ops for user... i copied from test-harness.pl.
@@ -66,24 +74,23 @@ sub handler_increment {
             #part channel on behalf of spoofed user
             $_heap->{ircd}->yield(
                 'daemon_cmd_part',
-                $res->{args}->{nick},
-                $res->{args}->{channel}
+                $res->{nick},
+                $res->{target}
             );
 
         }
         elsif ( $res->{action} eq 'join' ) {
-
 #           my $full        = $_heap->{ircd}->state_user_full( $res->{ args }->{ nick } );
 
             #join channel on behalf of spoofed user
             $_heap->{ircd}->yield(
                 'daemon_cmd_join',
-                $res->{args}->{nick},
-                $res->{args}->{channel}
+                $res->{nick},
+                $res->{target}
             );
 
         }
-        elsif ( $res->{action} eq 'msg' ) {
+        elsif ( $res->{action} eq 'message' ) {
 
             my $target = $res->{channel};
             my $nick   = $res->{nick};

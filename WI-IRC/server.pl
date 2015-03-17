@@ -5,6 +5,7 @@ use POE qw(Component::Server::IRC);
 use lib './lib';
 use DDP;
 use utf8;
+use WI::IRC;
 
 print STDERR "-- SERVER RESTARTED --";
 
@@ -36,7 +37,6 @@ my $pocosi = POE::Component::Server::IRC->spawn(
     debug  => 1,
 );
 
-use WI::IRC;
 my $plugin = WI::IRC->new( ircd => $pocosi );
 $pocosi->plugin_add( 'ExamplePlugin', $plugin );
 
