@@ -37,6 +37,7 @@ xx. Start the servers:
 
     cd WI-IRC && sh start_server.sh
     cd WI-WWW-Mojo && sh start.sh
+    cd WI-Main && sh start.sh
 
 xx. Connect from irc. use port 40404: 
     
