@@ -42,15 +42,29 @@ Class('AppChatControlUserlist', {
                 type: 'GET'
             }); 
         },
+        userlist_tpl : function ( users ) {
+            var tpl = "\
+                <ul>\
+                    {{#users}}\
+                        <li class='user' data-user_id='{{user_id}}'>{{username}}</li>\
+                    {{/users}}\
+                </ul>\
+            ";
+            var userlist = 
+                $( Mustache.render( tpl, { users:users } ) );
+            this.bind_userinfo( userlist );
+            return userlist;
+        },
+        bind_userinfo : function ( userlist ) {
+            $.each( userlist.find( 'li.user' ) , function(i,item) {
+                item = $( item );
+                item.click( function ( ev ) {
+                    alert( $( ev.currentTarget ).data( 'user_id' ) )
+                } );
+            }); 
+        },
         modal_userlist : function ( users ) {
             var _this = this;
-
-            var userlist = '';
-            for ( var i = 0, user; user = users[ i ] ; i++ ) {
-                userlist += ( ( i == 0 ) ? '' : ', ' ) + user.username;
-            }
-
-            console.log( userlist , '<- userlist' );
             var modal_tpl = '\
                 <div class="modal fade backdrop-transparent" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">\
                     <div class="modal-dialog">\
@@ -60,7 +74,6 @@ Class('AppChatControlUserlist', {
                             <h4 class="modal-title" id="myModalLabel">{{title}}</h4>\
                             </div>\
                             <div class="modal-body">\
-                                '+ userlist+'\
                             </div>\
                             <div class="modal-footer">\
                                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>\
@@ -74,9 +87,8 @@ Class('AppChatControlUserlist', {
                 title : 'Users from channel'
             } ) );
 
+            rendered.find('.modal-body').append( this.userlist_tpl( users ) );
             rendered.modal('show'); 
-
-
         },
         add_chan : function (chan ) {
             var _this = this;
