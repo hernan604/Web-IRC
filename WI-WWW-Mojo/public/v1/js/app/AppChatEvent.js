@@ -47,23 +47,14 @@ Class('AppChatEvent', {
         init : function () {
             var _this = this;
             this.setIs_initialized( true );
-          //for (var i=0, myclass; myclass = this.deps[i]; i++) {
-          //    var myinstance = new myclass({
-          //        app : _this
-          //    });
-          //    ( myinstance.init )
-          //        ? myinstance.init()
-          //        : undefined
-          //        ;
-          //}
-//          this.setLog( $( '#log[chan]' ) );
-
             jloader.load('AppChatPluginYoutube');
             this.setPlugins([
                 new AppChatPluginYoutube()
             ]);
 
             this.init_ws();
+            _this.app.instances.push( _this );
+            _this.app.named_instances['AppChatEvent'] = _this;
         },
         init_ws : function () {
             console.log('INIT WS');
@@ -117,7 +108,7 @@ Class('AppChatEvent', {
             } , 10 )
         },
         msg : function ( res ) {
-            console.log( 'msg' );
+            var _this = this;
             for ( var i = 0, plugin; plugin = this.plugins[ i ] ; i++ ) {
                 res.text = plugin.process( res.text );
             }
@@ -166,6 +157,7 @@ Class('AppChatEvent', {
                 ;
 
             console.log('Printar msg onde? canal ou pvt ?');
+            this.app.named_instances['ColLeftChannel'].event_message(res);
             if ( res.target.match( /^#/ ) ) {
                 console.log('é canal....');
                 var messages_log = $('.channel[data-chan='+ res.target +'] [id=log]');

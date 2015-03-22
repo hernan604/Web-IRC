@@ -13,6 +13,10 @@ Class('MyApp', {
         },
         lib_loader  : { is  : "rw" },
         ws          : { is  : "rw" },
+        named_instances   : {
+            is      : "rw", 
+            init    : (function(){ return {};})() 
+        },
         instances   : {
             is      : "rw", 
             init    : (function(){ return [];})() 

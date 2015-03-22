@@ -80,12 +80,6 @@ sub chat_ws {
 
     $self->on( message => sub {
         my ( $self, $args ) = @_; 
-
-        warn p $self->nick;
-        warn "^^ self->nick ^^";
-        warn p $args;
-        warn '^^ args ^^';
-
         #user wrote a message
         my $dt   = DateTime->now( time_zone => 'America/Sao_Paulo' );
         my $args = decode_json encode('UTF-8', $args );#* * * TODO: Validate if $args is json  before decodde_json
@@ -101,25 +95,12 @@ sub chat_ws {
             msg     => $args->{ msg },
             nick    => $nick,
         } ) if $self->nick->is_in_chan($nick, $chan);
-
-#       my $ws_path = '/chat_ws/'. $self->param('channel');
-
-#       $self->ws_send( $chan => {
-#           action  => 'message',
-#           target  => $args->{ chan },
-#           hms     => $dt->hms,
-#           text    => $args->{msg},
-#           source  => 'web',
-#           nick    => $args->{nick},
-#       } )
-
-
     } );
 
     $self->on( finish => sub {
         delete $clients->{$id};
        #$self->nick->part( $nick, $chan );
-        #TODO: Tell WI-Main user has disconnected. Delete the user from inside channels.
+        #TODO: Delete the user from inside channels.
         $self->nick->disconnected( $self->session( 'nick' ) );
         $self->redis->rpush( 'main_incoming_web', encode_json {
             action  => 'disconnect',

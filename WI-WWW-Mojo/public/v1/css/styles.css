@@ -166,7 +166,7 @@ textarea#msg {
 
 ul#log {
     list-style: none;
-    height: 80%;
+    height: 100%;
     padding: 0;
     margin: 0;
     overflow: hidden;
@@ -223,4 +223,32 @@ ul#log li > span.username {
 
 .msg .notice {
     color: #F00;
+}
+
+.message-counter {
+    background-color: #C62F2F;
+    border-radius: 5px;
+    color: #FFFFFF;
+    float: right;
+    font-size: 15px;
+    font-weight: bold;
+    line-height: 15px;
+    margin-right: 15px;
+    padding: 2px 7px;
+}
+
+[role=col-middle] .channel > .container-fluid {
+    height: 100%;
+    overflow: hidden;
+}
+
+
+[role=col-middle] .channel > .container-fluid > .header {
+    height: 10%;
+}
+[role=col-middle] .channel > .container-fluid > .body {
+    height: 80%;
+}
+[role=col-middle] .channel > .container-fluid > .footer {
+    height: 10%;
 }

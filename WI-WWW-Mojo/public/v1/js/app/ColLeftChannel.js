@@ -10,6 +10,7 @@ Class('ColLeftChannel', {
         },
         col_middle : { is : "rw" },
         channel_ul : { is : 'rw' },
+        active : { is : 'rw' },//the channel that is currently opened
 //      deps : {
 //          is      : "rw",
 //          init    : (function() {
@@ -35,6 +36,7 @@ Class('ColLeftChannel', {
                     instance.start();
                     console.log( _this.app );
                     _this.app.instances.push( instance );
+                    _this.app.named_instances['ColLeftChannel'] = instance;
                 }); 
             }); 
         },
@@ -135,6 +137,7 @@ Class('ColLeftChannel', {
                 .attr( 'data-chan', chan )
                 .click( function ( ev ) { 
                     var target = $( ev.currentTarget );
+console.log('Clicked , ', target);
                     var chan_name = target.data('chan');
                     _this.activate( $( ev.currentTarget ) , chan_name );
                     _this.hide_chans();
@@ -149,11 +152,15 @@ Class('ColLeftChannel', {
                 ;
         },
         activate : function ( target, chan ) {
+            var _this = this;
             $.each( target.parent().find('>li') , function ( i , item ) {
                 $( item ).removeClass('active');
                 console.log( $( item ).text(), chan );
-                if ( $( item ).text() == chan ) 
+                if ( $( item ).data('chan') && $( item ).data('chan') == chan ) {
                     $( item ).addClass('active');
+                    _this.setActive( chan );
+                    _this.remove_message_counter( $( item ) );
+                }
             } )
         },
         is_chan_open : function ( chan ) {
@@ -170,15 +177,15 @@ Class('ColLeftChannel', {
         tpl_channel : function ( channel ) {
             return '\
             <div class="container-fluid">\
-                <div class="row">\
+                <div class="row header">\
                     <ul class="controls">\
                         <li class="users">Users</li>\
                     </ul>\
                 </div>\
-                <div class="row">\
+                <div class="row body">\
                      <ul id="log" chan="'+ channel +'" readonly></ul>\
                 </div>\
-                <div class="row">\
+                <div class="row footer">\
                     <div class="col-sm-10">\
                         <div class="row">\
                             <textarea type="text" id="msg" placeholder="Enter text here.."/></textarea>\
@@ -224,6 +231,37 @@ Class('ColLeftChannel', {
                 },
                 type    : 'GET'
             } );
+        },
+        event_message : function ( res ) {
+            var _this = this ;
+            console.log('event_message', res )
+            console.log( _this.active );
+            if ( _this.active != res.target ) {
+                var $target = $('.channel-list [data-chan="'+res.target+'"]');
+                _this.update_message_counter( $target );
+            }
+        },
+        update_message_counter : function ( $elem ) {
+            var _this = this;
+            console.log( ' update_message_coutner' );
+            var $elem_counter = $elem.find( '.message-counter' ); 
+            var counter = ( $elem_counter.length ) 
+                ? ( function () {
+                    var total = $elem_counter.data('value') + 1 ;  
+                    $elem_counter.remove()
+                    return total;
+                } )()
+                : 1;
+
+            var $counter_markup = $('<span/>')
+                .addClass( 'message-counter' )
+                .attr('data-value', counter )
+                .html( counter )
+                .appendTo( $elem )
+                ;
+        },
+        remove_message_counter : function ( $elem ) {
+            $elem.find('.message-counter').remove();
         }
     },
     before : {
