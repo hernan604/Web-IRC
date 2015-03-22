@@ -3,7 +3,7 @@ use Moo;
 use Redis;
 use JSON::XS qw|encode_json decode_json|;
 my $r     = Redis->new;
-my $queue = 'actions';
+my $queue = 'irc_incoming_main';
 use POE::Session;
 use DDP;
 
@@ -48,7 +48,6 @@ sub handler_increment {
     my $res = $r->lpop($queue);
 
     if ($res) {
-
         #       warn " GOT VAL: $res " x 100;
         $res = decode_json $res;
         return if ! exists $res->{action};
@@ -59,7 +58,9 @@ sub handler_increment {
             warn "SPOOFED NICK";
             $_heap->{ircd}->yield( 
                 add_spoofed_nick => { 
-                    nick => $res->{nick} 
+                    nick => $res->{nick} ,
+                    umode => 'i', 
+                    ircname => 'WI user ircname',
                 } 
             );
 
@@ -68,6 +69,11 @@ sub handler_increment {
             #    #must be adjusted
             #    return if $heap->{ircd}->state_is_chan_op( $nick, $channel );
             #    $heap->{ircd}->daemon_server_mode( $channel, '+o', $nick );
+        }
+        if ( $res->{action} eq 'disconnect' ) {
+            $_heap->{ircd}->yield( 
+                del_spoofed_nick => $res->{nick} => '* * * gone * * *' 
+            );
         }
         elsif ( $res->{action} eq 'part' ) {
 

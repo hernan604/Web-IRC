@@ -17,8 +17,9 @@ my $channels = [];
 
 sub init_redis {
     my $self = shift;
-    $self->helper( redis => sub { Mojo::Redis2->new } );
-    $self->redis->rpush('main_incoming_irc', '{"action":"cleanup"}');
+    my $redis2 = Mojo::Redis2->new;
+    $self->helper( redis => sub { $redis2 } );
+    $self->redis->rpush('main_incoming_web', '{"action":"cleanup"}');
 }
 
 sub init_enpoint {
@@ -38,6 +39,7 @@ sub init_enpoint {
 }
 
 sub startup {
+    warn "START UP - begin";
     my $self = shift;
     $self->sessions->cookie_name( 'wi' );
     $self->sessions->default_expiration( 24*60*60*365 );#1 year
@@ -65,11 +67,8 @@ sub startup {
 #   $r->route('/enter')->name('chat_enter')
 #     ->to( controller => 'Chat', action => 'chat_enter' );
 
-    $r->websocket('/chat_ws/:channel')->name('chat_ws')
+    $r->websocket('/chat_ws/')->name('chat_ws')
       ->to( controller => 'Chat', action => 'chat_ws' );
-
-    $r->websocket('/irc_ws')->name('irc_ws')
-      ->to( controller => 'Chat', action => 'irc_ws' );
 
     $r->route('/channel/list')->name('channel_list')
       ->to( controller => 'Channel', action => 'channel_list' );
@@ -77,28 +76,26 @@ sub startup {
     $r->route('/channel/list_users/:channel')->name('list_users')
       ->to( controller => 'Channel', action => 'list_users' );
 
+    $r->route('/channel/join/:channel')->name('join')
+      ->to( controller => 'Chat', action => 'join' );
+
+    $r->route('/channel/part/:channel')->name('part')
+      ->to( controller => 'Chat', action => 'part' );
+
 #   $self->helper( redis => sub { Redis->new } );
 
     $self->helper( channels => sub { $channels } );    #array with channels
 
-
     my $pg = Mojo::Pg->new( $ENV{WI_MOJO_PG_DSN} );
     $pg->max_connections(5);
-    my $db = WI::DB->new( 
-        pg => $pg, 
-        _ref_main => $self, );
+    my $db = WI::DB->new( pg => $pg, _ref_main => $self, );
+    my $main = WI::Main->new( _ref_main => $self, db => $db );
+    $self->helper( wi_main => sub { $main } );
 
-    $self->helper( wi_main => sub { WI::Main->new( _ref_main => $self, db => $db ) } );
-
-    $self->helper(
-        nick => sub { WI::WWW::Mojo::Nick->new( _ref_main => $self ) } );
-
-    $self->helper(
-        db => sub {
-            $db
-        }
-    );
-
+    my $nick = WI::WWW::Mojo::Nick->new( app => $self );
+    $self->helper( nick => sub { $nick } );
+    $self->helper( db => sub { $db } );
+    warn "START UP - finish";
 }
 
 #get '/' => 'index';

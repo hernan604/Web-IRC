@@ -8,7 +8,6 @@ Class('AppChat', {
                     jloader.load('AppChatControl'),
                     jloader.load('AppChatEvent'),
                 ];
-                console.log(deps);
                 return deps;
             } )()
         },

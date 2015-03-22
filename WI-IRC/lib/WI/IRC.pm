@@ -139,7 +139,7 @@ sub IRCD_daemon_public {
             msg    => "$$msg",
             ident  => $ident,
             host   => $host,
-            target => "$$chan",
+            channel=> "$$chan",
         };
         #someone typed a message in irc.
        #$wi_main->irc->message_public( $item );

@@ -7,7 +7,8 @@
     jloader.load('MyApp');
     var mybase = new MyApp({
         deps : [
-            jloader.load('ColLeft')
+            jloader.load('ColLeft'),
+            jloader.load('AppChatEvent'),
         ]
     });
     mybase.init();

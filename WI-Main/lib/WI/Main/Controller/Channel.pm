@@ -17,7 +17,6 @@ sub list_users {
             ->hashes
             ->to_array
             ;
-use DDP; warn p $results;
         $self->render( json => {
             status => 'OK',
             result => $results,

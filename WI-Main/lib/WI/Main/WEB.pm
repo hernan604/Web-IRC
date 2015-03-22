@@ -10,8 +10,9 @@ has _ref_main => ( is => 'rw' );
 sub process {
     my $self = shift;
     my $item = shift;
-    warn "Process[WEB]:";
-    warn p $item;
+
+warn "WIN MAIN WEB - REDIS ITEM:";
+warn p $item;
 
     $item->{source}='web';
 
@@ -19,6 +20,7 @@ sub process {
     $self->part( $item ) if $item->{action} eq 'part';
     $self->message( $item ) if $item->{action} eq 'message';
     $self->connect( $item ) if $item->{action} eq 'connect';
+    $self->disconnect( $item ) if $item->{action} eq 'disconnect';
     $self->cleanup( $item ) if $item->{action} eq 'cleanup';
 }
 
@@ -30,8 +32,15 @@ sub cleanup {
 sub connect {
     my $self = shift;
     my $args = shift;
-    $self->_ref_main->redis->rpush( 'actions', encode_json $args )
-        if defined $args;
+    $self->_ref_main->redis->rpush( 'web_incoming_main', encode_json $args );
+    $self->_ref_main->redis->rpush( 'irc_incoming_main', encode_json $args );
+}
+
+sub disconnect {
+    my $self = shift;
+    my $args = shift;
+    $self->_ref_main->redis->rpush( 'web_incoming_main', encode_json $args );
+    $self->_ref_main->redis->rpush( 'irc_incoming_main', encode_json $args );
 }
 
 sub message {
@@ -57,14 +66,15 @@ sub message {
     };
     $channel->log->insert( $log );
     #forward to web
-    $self->_ref_main->redis->rpush( 'actions' , encode_json $args );
+    $self->_ref_main->redis->rpush( 'web_incoming_main', encode_json $args );
+    $self->_ref_main->redis->rpush( 'irc_incoming_main', encode_json $args );
 }
 
 sub join {
     #updates the channel status. everytime a user joins/parts the channel status is updated. 
     my $self = shift;
     my $args = shift;
-    $args->{action} = 'join';
+#   $args->{action} = 'join';
     $args->{source} = 'web';
     my $channel = $self->_ref_main->db->channel->find_or_create(
         {
@@ -88,9 +98,8 @@ sub join {
     $channel->log->insert( $log );
     $user->join( $channel, 'web' );
 
-#   $self->_ref_main->channel_join( $args );
-    $self->_ref_main->redis->rpush( 'actions', encode_json $args );
-#   $self->redis->rpush( 'actions' , encode_json $args ) if defined $args;
+    $self->_ref_main->redis->rpush( 'web_incoming_main', encode_json $args );
+    $self->_ref_main->redis->rpush( 'irc_incoming_main', encode_json $args );
 }
 
 sub part {
@@ -120,7 +129,8 @@ sub part {
 
     $channel->log->insert( $log );
     $user->part( $channel , 'web');
-    $self->_ref_main->redis->rpush( 'actions', encode_json $args );
+    $self->_ref_main->redis->rpush( 'web_incoming_main', encode_json $args );
+    $self->_ref_main->redis->rpush( 'irc_incoming_main', encode_json $args );
 }
 
 1;

@@ -108,10 +108,7 @@
         prefix : '/v1/js/app/',
     });
     jloader.load('AppChat');
-    var ws_url = 'ws://' + window.location.host + '/chat_ws/<%= $self->param('channel') %>';
     var mybase = new AppChat({
-        ws      : new WebSocket( ws_url ),
-        channel : '#<%= $self->param('channel') %>',
         deps    : [
             jloader.load('AppChatEvent'),
 //          jloader.load('AppChatInterface'),
@@ -130,7 +127,7 @@
         </ul>
     </div>
     <div class="row">
-         <ul id="log" chan='#<%= $self->param('channel') %>' readonly></ul>
+         <ul id="log" chan='' readonly></ul>
     </div>
     <div class="row">
         <div class="col-sm-10">

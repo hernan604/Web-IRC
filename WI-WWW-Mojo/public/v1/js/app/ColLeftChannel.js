@@ -132,11 +132,11 @@ Class('ColLeftChannel', {
             var li = $('<li/>');
             li.html( chan )
                 .appendTo( ul )
-                .attr( 'data-chan', chan.replace(/^#/,'') )
+                .attr( 'data-chan', chan )
                 .click( function ( ev ) { 
                     var target = $( ev.currentTarget );
                     var chan_name = target.data('chan');
-                    _this.activate( $( ev.currentTarget ) , '#' + chan_name );
+                    _this.activate( $( ev.currentTarget ) , chan_name );
                     _this.hide_chans();
                     if ( _this.is_chan_open( chan_name ) ) {
                         console.log('show_chan');
@@ -151,14 +151,14 @@ Class('ColLeftChannel', {
         activate : function ( target, chan ) {
             $.each( target.parent().find('>li') , function ( i , item ) {
                 $( item ).removeClass('active');
-console.log( $( item ).text(), chan );
+                console.log( $( item ).text(), chan );
                 if ( $( item ).text() == chan ) 
                     $( item ).addClass('active');
             } )
         },
         is_chan_open : function ( chan ) {
             return this.col_middle.find('[data-chan='+chan+']').length;
-        },
+        }, 
         find_chan: function ( chan ) {
             return this.col_middle.find('[data-chan='+chan+']');
         },
@@ -167,17 +167,63 @@ console.log( $( item ).text(), chan );
                 $(item).hide();
             })
         },
+        tpl_channel : function ( channel ) {
+            return '\
+            <div class="container-fluid">\
+                <div class="row">\
+                    <ul class="controls">\
+                        <li class="users">Users</li>\
+                    </ul>\
+                </div>\
+                <div class="row">\
+                     <ul id="log" chan="'+ channel +'" readonly></ul>\
+                </div>\
+                <div class="row">\
+                    <div class="col-sm-10">\
+                        <div class="row">\
+                            <textarea type="text" id="msg" placeholder="Enter text here.."/></textarea>\
+                        </div>\
+                    </div>\
+                    <div class="col-sm-2">\
+                        <div class="row">\
+                            <button class="btn send">Send</button>\
+                        </div>\
+                    </div>\
+                </div>\
+            </div>\
+            ';
+        },
         open_chan : function ( chan ) {
             console.log('open_chan');
             //build frame
             var _this = this;
-            var iframe = $('<iframe/>')
-                .attr('data-chan', chan)
-                .attr('src', '/chat/'+chan )
-                .appendTo( _this.col_middle.find('>.channels') )
-                .show()
-                ;
-
+        //  var iframe = $('<iframe/>')
+        //      .attr('data-chan', chan)
+        //      .attr('src', '/chat/'+chan )
+        //      .appendTo( _this.col_middle.find('>.channels') )
+        //      .show()
+        //      ;
+            //1. tell the app this user has joined the channel
+            $.ajax( {
+                url     : '/channel/join/'+chan.replace(/^#/,''),
+                cache   : true,
+                success : function ( data ) {
+                    console.log( data );
+                    if ( data.status == 'OK' ) {
+                        //2. create a div to print events that happpend in that channel
+                        var channel = $( '<div/>' )
+                            .addClass( 'channel' )
+                            .attr( 'data-chan', chan )
+                            .appendTo( _this.col_middle.find('>.channels') )
+                            .show()
+                            .html( _this.tpl_channel( chan ) )
+                            ;
+                    } else {
+                        console.error( 'could not join chan: ' + chan );
+                    }
+                },
+                type    : 'GET'
+            } );
         }
     },
     before : {

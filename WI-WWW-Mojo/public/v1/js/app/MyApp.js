@@ -12,8 +12,11 @@ Class('MyApp', {
           //})()
         },
         lib_loader  : { is  : "rw" },
-        instances   : { is  : "rw", 
-        init        : (function(){ return [];})() },
+        ws          : { is  : "rw" },
+        instances   : {
+            is      : "rw", 
+            init    : (function(){ return [];})() 
+        },
     },
     methods : {
         load_libs : function () {
@@ -27,6 +30,7 @@ Class('MyApp', {
               //    elem        : $( item ),
               //    app   : _this,
               //} )               var myinstance = new myclass();
+                console.log( myclass );
                 var myinstance = new myclass({
                     app : _this
                 });
