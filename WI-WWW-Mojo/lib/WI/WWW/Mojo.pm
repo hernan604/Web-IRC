@@ -34,7 +34,8 @@ sub init_enpoint {
     );
 
     $self->helper( endpoint => sub {{
-        list_users => 'http://127.0.0.1:9999/v1/:channel/list_users',
+        list_users      => 'http://127.0.0.1:9999/v1/channel/list_users',
+        channel_history => 'http://127.0.0.1:9999/v1/channel/history',
     }} );
 }
 
@@ -64,11 +65,11 @@ sub startup {
     $r->route('/chat/:channel')->name('chat')
       ->to( controller => 'Chat', action => 'chat' );
 
-#   $r->route('/enter')->name('chat_enter')
-#     ->to( controller => 'Chat', action => 'chat_enter' );
-
     $r->websocket('/chat_ws/')->name('chat_ws')
       ->to( controller => 'Chat', action => 'chat_ws' );
+
+    $r->route('/channel/history')->name('channel_history')
+      ->to( controller => 'Channel', action => 'history' );
 
     $r->route('/channel/list')->name('channel_list')
       ->to( controller => 'Channel', action => 'channel_list' );

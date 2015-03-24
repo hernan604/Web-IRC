@@ -225,12 +225,36 @@ console.log('Clicked , ', target);
                             .show()
                             .html( _this.tpl_channel( chan ) )
                             ;
+                        _this.history( chan );
                     } else {
                         console.error( 'could not join chan: ' + chan );
                     }
                 },
                 type    : 'GET'
             } );
+        },
+        history : function ( channel ) {
+            //1; get channel history
+            var _this = this;
+            var dt = new Date();
+try {
+            $.ajax({
+                url     : '/channel/history',
+                cache   : false,
+                success : function (data) {
+                    alert('history.... see console.log');
+                    console.log( data, '<- history' );
+                },
+                data    : JSON.stringify({
+                    id          : last_msg_id,
+                    channel     : channel,
+                }),
+                contentType   :'application/json',
+                dataType      :'json',
+                type          : 'PUT'
+            }); 
+} catch ( e) { console.log( "ERRROR -> ", e ); }
+            //2. prepend channel history in chan div
         },
         event_message : function ( res ) {
             var _this = this ;

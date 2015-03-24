@@ -60,9 +60,14 @@ sub init_routes {
     $r->namespaces(['WI::Main::Controller']);
 
     #
-    $r->route( '/v1/:channel/list_users' )
+    $r->route( '/v1/channel/list_users' )
         ->name( 'channel_list_users' )
         ->to( controller => 'Channel', action => 'list_users' )
+        ;
+
+    $r->route( '/v1/channel/history' )
+        ->name( 'channel_history' )
+        ->to( controller => 'Channel', action => 'history' )
         ;
 
 

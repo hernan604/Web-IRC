@@ -46,6 +46,7 @@ sub disconnect {
 sub message {
     my $self = shift;
     my $args = shift;
+warn "MESSAGE";
 
     my $channel = $self->_ref_main->db->channel->find_or_create(
         {
@@ -63,8 +64,10 @@ sub message {
         user_id    => $user->id,
         line       => $args->{msg},
         source     => 'web',
+        action     => 'message',
     };
-    $channel->log->insert( $log );
+    $log = $channel->log->insert( $log );
+    $args->{ channel_log_id } = $log->{ id };
     #forward to web
     $self->_ref_main->redis->rpush( 'web_incoming_main', encode_json $args );
     $self->_ref_main->redis->rpush( 'irc_incoming_main', encode_json $args );
@@ -95,7 +98,8 @@ sub join {
         action     => 'join',
     };
 
-    $channel->log->insert( $log );
+    $log = $channel->log->insert( $log );
+    $args->{ channel_log_id } = $log->{ id };
     $user->join( $channel, 'web' );
 
     $self->_ref_main->redis->rpush( 'web_incoming_main', encode_json $args );
@@ -127,7 +131,8 @@ sub part {
         action     => 'part',
     };
 
-    $channel->log->insert( $log );
+    $log = $channel->log->insert( $log );
+    $args->{ channel_log_id } = $log->{ id };
     $user->part( $channel , 'web');
     $self->_ref_main->redis->rpush( 'web_incoming_main', encode_json $args );
     $self->_ref_main->redis->rpush( 'irc_incoming_main', encode_json $args );
