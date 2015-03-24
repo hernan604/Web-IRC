@@ -1,4 +1,5 @@
 =encoding utf8
+
 =head1 Web::IRC - WI
 
 Web::IRC tool has the goal of making communication better inside teams. Similar to slack.com
