@@ -5,7 +5,6 @@ use strict;
 use warnings;
 use DateTime;
 use JSON::XS qw|encode_json decode_json|;
-#use WI::Main;
 use WI::WWW::Mojo::Nick;
 use Mojo::Pg;
 use WI::DB;
@@ -83,15 +82,7 @@ sub startup {
     $r->route('/channel/part/:channel')->name('part')
       ->to( controller => 'Chat', action => 'part' );
 
-#   $self->helper( redis => sub { Redis->new } );
-
     $self->helper( channels => sub { $channels } );    #array with channels
-
-#   my $pg = Mojo::Pg->new( $ENV{WI_MOJO_PG_DSN} );
-#   $pg->max_connections(5);
-#   my $db = WI::DB->new( pg => $pg, _ref_main => $self, );
-#   my $main = WI::Main->new( _ref_main => $self, db => $db );
-#   $self->helper( wi_main => sub { $main } );
 
     my $nick = WI::WWW::Mojo::Nick->new( app => $self );
     $self->helper( nick => sub { $nick } );
