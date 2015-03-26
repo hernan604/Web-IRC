@@ -39,13 +39,6 @@ sub part {
     $self->render( json => { status => 'OK' } );
 }
 
-sub send_to_ircd {
-    my $self = shift;
-    my $args = shift;
-    my $queue = $self->queue->{main_incoming_web};
-    $self->redis->rpush( $queue, encode_json $args) if defined $args;
-}
-
 sub chat {
     my $self = shift;
     $self->respond_to(
