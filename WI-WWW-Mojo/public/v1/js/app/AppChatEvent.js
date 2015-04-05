@@ -33,8 +33,30 @@ Class('AppChatEvent', {
                 <li class='row msg'>\
                 <div class='col-sm-1'><div class='row photo userpic'></div></div>\
                 <div class='col-sm-11'><div class='row'><span class='username'>{{nick}}</span><span class='date'>{{hms}}</span></div><div class='row'><span class='notice'>{{action}}</span></div></div>\
-                <li>\
+                <\li>\
                 "; 
+                return tpl;
+            })()
+        },
+        tpl_pvt: {
+            is : 'rw',
+            init : (function () {
+                var tpl = '\
+                <li class="row msg">\
+                    <div class="col-sm-1">\
+                        <div class="row photo userpic"></div>\
+                    </div>\
+                    <div class="col-sm-11">\
+                        <div class="row">\
+                            <span class="username">{{from}}</span>\
+                            <span class="date">{{created}}</span>\
+                        </div>\
+                        <div class="row">\
+                            <span>{{line}}</span>\
+                        </div>\
+                    </div>\
+                </li>\
+                '; 
                 return tpl;
             })()
         },
@@ -56,6 +78,18 @@ Class('AppChatEvent', {
             _this.app.instances.push( _this );
             _this.app.named_instances['AppChatEvent'] = _this;
         },
+        process_ws_obj : function ( obj, extra ) {
+            var _this = this;
+//          console.log( 'RECEIVED MESSAGE' );
+//          console.log( obj );
+                 if ( obj.action == 'message' )   { _this.msg(obj, extra)  }
+            else if ( obj.action == 'join' )      { _this.join(obj, extra) }
+            else if ( obj.action == 'part' )      { _this.part(obj, extra) }
+            else if ( obj.action == 'private-message' )      { _this.private_message(obj, extra) }
+            else if ( obj.action == 'connect' )      { _this.connect(obj, extra) }
+            else if ( obj.action == 'disconnect' )      { _this.disconnect(obj, extra) }
+            else { console.log(obj, '<- UNKNOWN MSG' ) }
+        }, 
         init_ws : function () {
             console.log('INIT WS');
             var _this = this;
@@ -67,50 +101,81 @@ Class('AppChatEvent', {
 
             ws.onopen = function () {
                 console.log('Connection opened');
+//              _this.app.named_instances.User.get_profile();
+console.log( '* * * * * ATIVAT A OPCAO ACIMA... get_profile ... pra atualizar o meu profile.');
             };
-            ws.onmessage = function (msg) {
-              console.log('RECEIVED MESSAGE');
-              console.log(msg);
-              var res = JSON.parse(msg.data);
-                   if ( res.action == 'message' )   { _this.msg(res)  }
-              else if ( res.action == 'join' )      { _this.join(res) }
-              else if ( res.action == 'part' )      { _this.part(res) }
+            ws.onmessage = function ( obj ) {
+                console.log( "ws onmessage", obj );
+                _this.process_ws_obj( JSON.parse( obj.data ), { is_live_event : true } );
             };
 
             $( document ).on( 'keydown', '[id=msg]', function ( ev ) {
                 var item = $( ev.currentTarget );
-                var chan = item.closest( '[data-chan]' );
-                console.log( 'keydown: ', chan, _this.rnd );
                 if ( ev.keyCode == 13 && item.val( ) ) {
-                    _this.submit( chan.data('chan'), item );
+                    _this.submit( (item.closest( '[data-chan]' ).data('chan')
+                                 ||item.closest( '[data-user]' ).data('user')
+                    ), item );
                 }
             } )
 
             $( document ).on( 'click', '.btn.send', function ( ev ) {
                 var $item = $( ev.currentTarget );
-                var chan = $item.closest( '[data-chan]' );
                 var $msg = chan.find( '[id=msg]' );
-                _this.submit( chan.data('chan'), $msg );
+                _this.submit( $item.closest( '[data-chan]' ).data('chan')
+                            ||$item.closest( '[data-user]' ).data('user')
+                , $msg );
             } )
         },
-        submit : function ( chan, $msg ) {
-            console.log( 'submit in chan: ', chan, ' value: ', $msg.val() );
+        submit : function ( target, $msg ) {
+            console.log( 'submit to: ', target, ' value: ', $msg.val() );
             var _this = this;
-            var data = JSON.stringify({ 
+            var data = { 
                 source  : 'web', 
-                action  : 'msg', 
-                msg     : $msg.val(),
-                chan    : chan
-            });
+                line    : $msg.val(),
+            };
+            if ( target.match(/^#/) ) {
+                data.chan = target;
+                data.action  = 'message';
+            } else {
+                data.to = target;
+                data.action  = 'private-message';
+            }
+ 
+            data = JSON.stringify( data );
+            console.log( "sent: " , data  );
             _this.app.ws.send( data );
             setTimeout( function () { 
                 $msg.val('');
             } , 10 )
         },
-        msg : function ( res ) {
+        connect : function ( res, extra ) {
+            var _this = this;
+            //tru to update user status from USerList
+            //try to update my status.
+            _this.app.named_instances['UserList'].set_status( res.nick, res.status );
+        },
+        disconnect : function ( res, extra ) {
+            var _this = this;
+            //tru to update user status from USerList
+            //try to update my status.
+            _this.app.named_instances['UserList'].set_status( res.nick, res.status );
+        },
+        private_message : function ( res, extra ) {
+            var _this = this;
+            var messages_log = $('.user[data-user='+ res.to +'] [id=log],.user[data-user='+ res.from +'] [id=log]')
+
+            _this.app.named_instances['UserList'].append_nick( res.from );
+            _this.app.named_instances['UserList'].event_message(res);
+
+            var rendered = $( Mustache.render( _this.tpl_pvt, res ) ); 
+            rendered
+                .appendTo(messages_log)
+            messages_log.scrollTop(messages_log[0].scrollHeight);
+        },
+        msg : function ( res, extra ) {
             var _this = this;
             for ( var i = 0, plugin; plugin = this.plugins[ i ] ; i++ ) {
-                res.text = plugin.process( res.text );
+                res.line = plugin.process( res.line );
             }
 
             var msg_markup = $('<li/>')
@@ -138,7 +203,8 @@ Class('AppChatEvent', {
                 .html( res.hms )
                 .appendTo( row_1 )
 
-            var text = $('<span/>').html( res.text )
+            var text = $('<span/>')
+                .html( res.line )
                 .appendTo( row_2 )
 
             var photo_container = $('<div>')
@@ -156,12 +222,9 @@ Class('AppChatEvent', {
 //              .append( $('<span/>').html( res.text ) )
                 ;
 
-            console.log('Printar msg onde? canal ou pvt ?');
-            this.app.named_instances['ColLeftChannel'].event_message(res);
-            if ( res.target.match( /^#/ ) ) {
-                console.log('é canal....');
-                var messages_log = $('.channel[data-chan='+ res.target +'] [id=log]');
-                console.log( messages_log, '<- messages_log ' );
+            this.app.named_instances['ChannelList'].event_message(res);
+            if ( res.channel.match( /^#/ ) ) {
+                var messages_log = $('.channel[data-chan='+ res.channel +'] [id=log]');
                 msg_markup.appendTo( messages_log )
                 messages_log.scrollTop(messages_log[0].scrollHeight);
             } else {
@@ -172,30 +235,67 @@ Class('AppChatEvent', {
 //              .appendTo(log)
 //          this.log.scrollTop(this.log[0].scrollHeight);
         },
-        join : function (res) {
+        join : function ( res, extra ) {
             var _this = this;
-            console.log('FROM WEB: user join',res);
-            res.action = 'joins ' + res.target;
+            var messages_log = $('.channel[data-chan='+ res.channel +'] [id=log]');
+            if ( extra && extra.is_live_event && ! messages_log.find( '>li' ).length ) {
+                console.log(messages_log.find( '>li' ).length) 
+                _this.history( res.channel , res.last_msg_id );
+            }
+
+//          console.log('FROM WEB: user join',res);
+            res.action = 'joins ' + res.channel;
+            _this.render_join( messages_log, res );
+            messages_log.scrollTop(messages_log[0].scrollHeight);
+            if ( extra && extra.is_live_event ) {
+                _this.app.named_instances['AppChatControlUserlist'].update_user_counter( res.channel );
+            }
+        },
+        render_join : function ( messages_log, res ) {
+            var _this = this; 
             var rendered = $( Mustache.render( _this.tpl_join_part, res ) ); 
-            var messages_log = $('.channel[data-chan='+ res.target +'] [id=log]');
+            rendered
+                .appendTo(messages_log)
+        },
+        part : function (res, extra) {
+          //_this.ws.send({ source : 'web', action: 'part', channel : chan });
+            var _this = this;
+            res.action = 'parts from ' + res.channel;
+            var rendered = $( Mustache.render( _this.tpl_join_part, res ) ); 
+            var messages_log = $('.channel[data-chan='+ res.channel +'] [id=log]');
             rendered
                 .appendTo(messages_log)
             messages_log.scrollTop(messages_log[0].scrollHeight);
-        },
-        part : function (res) {
-          //_this.ws.send({ source : 'web', action: 'part', channel : chan });
-            var _this = this;
-            console.log('FROM WEB: user part',res);
-            res.action = 'parts from ' + res.target;
-            var rendered = $( Mustache.render( _this.tpl_join_part, res ) ); 
-            var messages_log = $('.channel[data-chan='+ res.target +'] [id=log]');
-            rendered
-                .appendTo(messages_log)
-            messages_log.scrollTop(messges_log[0].scrollHeight);
+//          _this.app.named_instances['AppChatControlUserlist'].update_user_counter( res.channel );
         },
         log : function ( text ) {
             var msg = $('<li/>').html( text ).appendTo( this.log );
-        }
+        },
+        history : function ( channel, last_msg_id ) {
+            var _this = this;
+            var dt = new Date();
+            if ( ! channel || ! last_msg_id ) return;
+            $.ajax({
+                url     : '/channel/history',
+                cache   : false,
+                async   : false,
+                success : function (data) {
+//                  console.log( data, '<- history' );
+                    if ( !data || !data.results ) { return; }
+                    for ( var i=0, obj; obj = data.results[i]; i++ ) {
+//                      console.log( obj, '< - OBJ' );
+                        _this.process_ws_obj( obj );
+                    }
+                },
+                data    : JSON.stringify({
+                    id          : last_msg_id,
+                    channel     : channel,
+                }),
+                contentType   :'application/json',
+                dataType      :'json',
+                type          : 'PUT'
+            }); 
+        },
     },
     after : {
         initialize: function () {

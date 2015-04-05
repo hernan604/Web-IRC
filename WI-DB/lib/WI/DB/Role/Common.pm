@@ -34,8 +34,8 @@ sub find {
     my $self         = shift;
     my $args         = shift;
     my $order_by     = shift;
-    my $item = $self->new_with( $self->pg_find( $args, $order_by )->hash );
-    $item;
+    my $item = $self->pg_find( $args, $order_by )->hash;
+    $self->new_with( $item );
 }
 
 sub pg_find {
@@ -60,8 +60,16 @@ sub search {
 sub delete {
     my $self         = shift;
     my $args         = shift || {};
-warn "DELETE";
     my ( $stmt, @values ) = $self->app->sql->delete( $self->table_name, $args );
+    my $results = $self->app->pg->db->query( $stmt, @values );
+    $results;
+}
+
+sub update {
+    my $self         = shift;
+    my $args         = shift || {};
+    my $where        = shift;
+    my ( $stmt, @values ) = $self->app->sql->update( $self->table_name, $args, $where );
     my $results = $self->app->pg->db->query( $stmt, @values );
     $results;
 }

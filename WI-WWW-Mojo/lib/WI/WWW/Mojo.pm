@@ -10,6 +10,7 @@ use Mojo::Pg;
 use WI::DB;
 use Mojo::UserAgent;
 use Mojo::Redis2;
+use DDP;
 
 our $VERSION = "0.01";
 my $channels = [];
@@ -35,11 +36,15 @@ sub init_enpoint {
     $self->helper( endpoint => sub {{
         list_users      => 'http://127.0.0.1:9999/v1/channel/list_users',
         channel_history => 'http://127.0.0.1:9999/v1/channel/history',
+        private_history => 'http://127.0.0.1:9999/v1/private/history',
+        everyone_status => 'http://127.0.0.1:9999/v1/everyone-status',
+        friend_list     => 'http://127.0.0.1:9999/v1/user/friend-list',
+        user_friend_add => 'http://127.0.0.1:9999/v1/user/friend/add',
+        user_friend_del => 'http://127.0.0.1:9999/v1/user/friend/del',
     }} );
 }
 
 sub startup {
-    warn "START UP - begin";
     my $self = shift;
     $self->sessions->cookie_name( 'wi' );
     $self->sessions->default_expiration( 24*60*60*365 );#1 year
@@ -48,6 +53,9 @@ sub startup {
 
     my $r    = $self->routes;
     $r->namespaces( ['WI::WWW::Mojo::Controller'] );
+
+    $r->websocket('/chat_ws/')->name('chat_ws')
+      ->to( controller => 'Chat', action => 'chat_ws' );
 
     $r->route('/signup')->name('signup')
       ->to( controller => 'Auth', action => 'signup' );
@@ -64,8 +72,8 @@ sub startup {
     $r->route('/chat/:channel')->name('chat')
       ->to( controller => 'Chat', action => 'chat' );
 
-    $r->websocket('/chat_ws/')->name('chat_ws')
-      ->to( controller => 'Chat', action => 'chat_ws' );
+    $r->route('/private-message/history')->name('private_history')
+      ->to( controller => 'History', action => 'private_message' );
 
     $r->route('/channel/history')->name('channel_history')
       ->to( controller => 'Channel', action => 'history' );
@@ -82,55 +90,25 @@ sub startup {
     $r->route('/channel/part/:channel')->name('part')
       ->to( controller => 'Chat', action => 'part' );
 
+    $r->route('/user/profile')->name('user_profile')
+      ->to( controller => 'User', action => 'profile' );
+
+    $r->route('/everyone-status')->name('everyone_status')
+      ->to( controller => 'User', action => 'everyone_status' );
+
+    $r->route('/user/friend/add')->name('user_friend_add')
+      ->to( controller => 'User', action => 'friend_add' );
+
+    $r->route('/user/friend/del')->name('user_friend_del')
+      ->to( controller => 'User', action => 'friend_del' );
+
+
     $self->helper( channels => sub { $channels } );    #array with channels
 
     my $nick = WI::WWW::Mojo::Nick->new( app => $self );
     $self->helper( nick => sub { $nick } );
-#   $self->helper( db => sub { $db } );
-    warn "START UP - finish";
+    $self->helper( ddp => sub { for ( @_ ) { warn p $_ } } );
 }
-
-#get '/' => 'index';
-
-sub user_channels {
-
-    #returns an array with the channels the user is in
-    my $self = shift;
-
-    #query some database and see what chans are active.
-}
-
-sub lista_channels {
-
-    #returns a sorted array with thte chanels avaliable
-}
-
-sub join_channel {
-
-    #joins a given channel
-    my $self    = shift;
-    my $channel = shift;
-
-    #   $self
-}
-
-sub part_channel {
-
-    #parts a given channel
-}
-
-sub msg_chan {
-
-    #sends a message to channel.Everyone in the channel can see it.
-}
-
-sub kick_user {
-
-    #kicks a user from a channel. user must be operator in that channel
-    #LOW PRIORITY
-}
-
-my $clients = {};
 
 1;
 __END__

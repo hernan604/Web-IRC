@@ -25,32 +25,41 @@ sub startup {
     $self->init_redis;
 }
 
+sub _redis {
+    my $self = shift;
+    my $redis2 = Mojo::Redis2->new;
+    $self->helper( redis => sub { $redis2 } );
+}
+
+sub _irc {
+    my $self = shift;
+    my $irc = WI::Main::IRC->new( _ref_main => $self );
+    $self->helper( irc => sub { $irc; } );
+}
+
+sub _web {
+    my $self = shift;
+    my $web = WI::Main::WEB->new( _ref_main => $self );
+    $self->helper( web => sub { $web } );
+}
+sub _db {
+    my $self = shift;
+    my $pg = Mojo::Pg->new( $ENV{WI_MOJO_PG_DSN} );
+    $pg->max_connections(2);
+    $pg->options( { pg_enable_utf8 => 0, } );
+    my $db = WI::DB->new(
+        pg                  => $pg,
+        filepath_migrations => '../WI-DB/migrations.sql',
+    );
+    $self->helper( db => sub { $db } );
+}
+
 sub init_helpers {
     my $self = shift;
-
-    $self->helper( redis => sub { state $r = Mojo::Redis2->new } );
-
-    $self->helper( irc => sub {
-        my $self = shift;
-        WI::Main::IRC->new( _ref_main => $self );
-    } );
-
-    $self->helper( web => sub {
-        my $self = shift;
-        WI::Main::WEB->new( _ref_main => $self );
-    } );
-
-    $self->helper( db => sub {
-        my $self = shift;
-        state $pg = Mojo::Pg->new( $ENV{WI_MOJO_PG_DSN} );
-        $pg->max_connections(2);
-        $pg->options( { pg_enable_utf8 => 0, } );
-        my $db = WI::DB->new(
-            pg                  => $pg,
-            filepath_migrations => '../WI-DB/migrations.sql',
-        );
-    } );
-
+    $self->_redis;
+    $self->_irc;
+    $self->_web;
+    $self->_db;        
 }
 
 sub init_routes {
@@ -59,7 +68,6 @@ sub init_routes {
     my $r = $self->routes;
     $r->namespaces(['WI::Main::Controller']);
 
-    #
     $r->route( '/v1/channel/list_users' )
         ->name( 'channel_list_users' )
         ->to( controller => 'Channel', action => 'list_users' )
@@ -70,15 +78,30 @@ sub init_routes {
         ->to( controller => 'Channel', action => 'history' )
         ;
 
+    $r->route( '/v1/private/history' )
+        ->name( 'private_history' )
+        ->to( controller => 'History', action => 'private_message' )
+        ;
 
+    $r->route( '/v1/everyone-status' )
+        ->name( 'everyone_status' )
+        ->to( controller => 'User', action => 'everyone_status' )
+        ;
 
+    $r->route( '/v1/user/friend-list' )
+        ->name( 'friend_list' )
+        ->to( controller => 'User', action => 'friend_list' )
+        ;
 
+    $r->route( '/v1/user/friend/add' )
+        ->name( 'friend_add' )
+        ->to( controller => 'User', action => 'friend_add' )
+        ;
 
-
-
-
-
-
+    $r->route( '/v1/user/friend/del' )
+        ->name( 'friend_del' )
+        ->to( controller => 'User', action => 'friend_del' )
+        ;
 }
 
 sub init_redis {

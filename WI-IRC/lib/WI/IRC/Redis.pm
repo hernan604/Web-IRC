@@ -81,7 +81,7 @@ sub handler_increment {
             $_heap->{ircd}->yield(
                 'daemon_cmd_part',
                 $res->{nick},
-                $res->{target}
+                $res->{channel}
             );
 
         }
@@ -92,16 +92,35 @@ sub handler_increment {
             $_heap->{ircd}->yield(
                 'daemon_cmd_join',
                 $res->{nick},
-                $res->{target}
+                $res->{channel}
             );
 
         }
         elsif ( $res->{action} eq 'message' ) {
-
+warn "MESSAGE:";
+warn p $res;
             my $target = $res->{channel};
             my $nick   = $res->{nick};
-            my $msg    = $res->{msg};
+            my $msg    = $res->{line};
             $_heap->{ircd}->yield( 'daemon_cmd_privmsg', $nick, $target, $msg );
+        }
+        elsif ( $res->{action} eq 'private-message' ) {
+#   \ {
+#       action    "private-message",
+#       created   "2015-03-31 22:56:11.406747",
+#       from      "teste",
+#       line      "teste",
+#       source    "web",
+#       to        "administrator"
+#   } at lib/WI/IRC/Redis.pm line 56.
+
+            $_heap->{ircd}->yield( 
+                'daemon_cmd_privmsg', 
+                $res->{ from }, 
+                $res->{ to }, 
+                $res->{ line }
+            );
+
         }
 
    #: {"action":"connect","nick":"2222"}

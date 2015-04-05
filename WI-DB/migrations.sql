@@ -52,4 +52,32 @@ CREATE TABLE "UserChannel" (
 ALTER TABLE "UserChannel" ADD COLUMN id serial;
 ALTER TABLE "UserChannel" ADD COLUMN source text;
 
+-- 8 up
 
+CREATE TABLE "PrivateMessageLog" (
+    id serial       NOT NULL,
+    from_user_id    INTEGER NOT NULL REFERENCES "User"(id),
+    to_user_id      INTEGER NOT NULL REFERENCES "User"(id),
+    line            text,
+    source          text,
+    created         timestamp without time zone default (now() at time zone 'utc'),
+    PRIMARY KEY ( id )
+);
+
+-- 9 up
+
+ALTER TABLE "User" ADD COLUMN status text;
+
+-- 10 up
+
+ALTER TABLE "User" ADD COLUMN last_status text;
+
+--11 up 
+
+CREATE TABLE "UserFriend" (
+    id serial       NOT NULL,
+    user_id         INTEGER NOT NULL REFERENCES "User"(id),
+    friend_user_id  INTEGER NOT NULL REFERENCES "User"(id),
+    created         timestamp without time zone default (now() at time zone 'utc'),
+    PRIMARY KEY ( user_id, friend_user_id )
+);

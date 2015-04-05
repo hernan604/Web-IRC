@@ -5,7 +5,7 @@
     <title></title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="/v1/css/styles.css">
-    <script type="text/javascript" src="http://cdn.rawgit.com/hernan604/JooseLoader/master/js/joose.js"></script>
+    <script type="text/javascript" src="/v1/js/joose.js"></script>
     <script type="text/javascript" src="/v1/js/JooseLoader.js"></script>
     <script type="text/javascript" src="/v1/css/styles.css"></script>
     <script>

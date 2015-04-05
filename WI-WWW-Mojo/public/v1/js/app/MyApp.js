@@ -21,6 +21,7 @@ Class('MyApp', {
             is      : "rw", 
             init    : (function(){ return [];})() 
         },
+        my_nick : { is : 'rw' },
     },
     methods : {
         load_libs : function () {

@@ -11,7 +11,8 @@ Class('ColLeft', {
             is      : "rw",
             init    : (function() {
                 return [
-                    jloader.load('ColLeftChannel')
+                    jloader.load('ChannelList'),
+                    jloader.load('UserList'),
                 ]
             } )()
         },

@@ -19,28 +19,42 @@ Class('AppChatControlUserlist', {
         },
         init : function () {
             var _this = this;
-            $(document).ready(function () {
-                _this.setTarget( $(_this.selector) );
-                console.log( 'bind' );
-                _this.target.click( function () {
-                    _this.open();
-                } );
+            $( document ).ready( function () {
+                $( document ).on(
+                    'click', 
+                    _this.selector , 
+                    function ( ev ) { _this.open( ev ) } 
+                );
+                _this.app.instances.push( _this );
+                _this.app.named_instances['AppChatControlUserlist'] = _this;
             }); 
         },
-        open : function () {
+        list_users : function ( cb ) {
             var _this = this;
-            this.target.addClass('open').removeClass('closed');
-            var url = '/channel/list_users/'+(_this.app.channel.replace(/^#/,''));
+            var current_channel = _this.app.named_instances['ChannelList'].active;
+            var url = '/channel/list_users/'+( current_channel.replace(/^#/,'') );
             $.ajax({
                 url     : url,
                 cache   : false,
                 contentType : 'application/json',
                 dataType : 'json',
-                success : function (data) {
-                    _this.modal_userlist( data.result );
-                },
+                success : cb,
                 type: 'GET'
             }); 
+        },
+        open : function ( ev ) {
+            var _this = this;
+            var target = $( ev.currentTarget );
+            target.addClass('open').removeClass( 'closed' );
+            _this.list_users( function ( data ) { _this.modal_userlist( target, data.results ); } );
+        },
+        update_user_counter : function ( channel ) {
+console.log('update_user_counter');
+            var _this = this;
+            _this.list_users( function ( data ) { 
+                console.log(data,'<--- update user_counter');
+                _this.app.named_instances['ChannelList'].channel_dom( channel ).find('.count').html( data.results.length );
+            } );
         },
         userlist_tpl : function ( users ) {
             var tpl = "\
@@ -59,11 +73,11 @@ Class('AppChatControlUserlist', {
             $.each( userlist.find( 'li.user' ) , function(i,item) {
                 item = $( item );
                 item.click( function ( ev ) {
-                    alert( $( ev.currentTarget ).data( 'user_id' ) )
+                    alert( $( ev.currentTarget ).data( 'user_id' ) );
                 } );
             }); 
         },
-        modal_userlist : function ( users ) {
+        modal_userlist : function ( target, users ) {
             var _this = this;
             var modal_tpl = '\
                 <div class="modal fade backdrop-transparent" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">\
@@ -89,28 +103,6 @@ Class('AppChatControlUserlist', {
 
             rendered.find('.modal-body').append( this.userlist_tpl( users ) );
             rendered.modal('show'); 
-        },
-        add_chan : function (chan ) {
-            var _this = this;
-            var ul = _this.channel_ul;
-            var li = $('<li/>');
-            li.html( chan )
-                .appendTo( ul )
-                .attr( 'data-chan', chan.replace(/^#/,'') )
-                .click( function ( ev ) { 
-                    var target = $( ev.currentTarget );
-                    var chan_name = target.data('chan');
-                    _this.activate( $( ev.currentTarget ) , '#' + chan_name );
-                    _this.hide_chans();
-                    if ( _this.is_chan_open( chan_name ) ) {
-                        console.log('show_chan');
-                        var chan = _this.find_chan( chan_name );
-                        chan.show();
-                    } else {
-                        _this.open_chan(chan_name);
-                    }
-                } )
-                ;
         },
     },
     after : {

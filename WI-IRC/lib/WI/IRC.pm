@@ -136,7 +136,7 @@ sub IRCD_daemon_public {
             action => 'message',
             nick   => $nick,
            #msg    => decode('UTF-8',"$$msg"),
-            msg    => "$$msg",
+            line   => "$$msg",
             ident  => $ident,
             host   => $host,
             channel=> "$$chan",
@@ -162,6 +162,41 @@ sub IRCD_daemon_cmd_privmsg {
 
 sub IRCD_daemon_privmsg {
     warn "DAEMON PRIVMSG" x 100;
+#   [
+#       [0] WI::IRC  {
+#           Parents       Moo::Object
+#           public methods (30) : BUILD, find_nick, hostname_parse, ircd, IRCD_connection, IRCD_daemon_cmd_message, IRCD_daemon_cmd_privmsg, IRCD_daemon_gline, IRCD_daemon_invite, IRCD_daemon_join, IRCD_daemon_kick, IRCD_daemon_kline, IRCD_daemon_mode, IRCD_daemon_nick, IRCD_daemon_notice, IRCD_daemon_part, IRCD_daemon_privmsg, IRCD_daemon_public, IRCD_daemon_quit, IRCD_daemon_rehash, IRCD_daemon_topic, IRCD_daemon_umode, is_spoofed, new, PCSI_EAT_ALL, PCSI_EAT_CLIENT, PCSI_EAT_NONE, PCSI_EAT_PLUGIN, PCSI_register, PCSI_unregister
+#           private methods (1) : _default
+#           internals: {
+#               ircd   POE::Component::Server::IRC
+#           }
+#       },
+#       [1] var[0]{ircd},
+#       [2] \ "administrator!administrator@STAFF",
+#       [3] \ "teste2",
+#       [4] \ "eae",
+#       [5] []
+#   ] at lib/WI/IRC.pm line 165.
+#   PRIVMSG ^^^ at lib/WI/IRC.pm line 166.
+#   PRIVMSG ^^^ at lib/WI/IRC.pm line 167.
+#   PRIVMSG ^^^ at lib/WI/IRC.pm line 168.
+
+    my ( $self, $ircd, $hostname, $to, $line ) = @_;
+    my ( $nick, $ident, $host ) = @{ $self->hostname_parse("$$hostname") };
+    if ( $self->find_nick($nick) && !$self->is_spoofed($nick) ) {
+        my $item = {
+            action  => 'private-message',
+            from    => $nick,
+            to      => "$$to",
+            line    => "$$line",
+            ident   => $ident,
+            host    => $host,
+        };
+        $redis->rpush('main_incoming_irc', encode_json $item );
+    }
+    warn "PRIVMSG ^^^";
+    warn "PRIVMSG ^^^";
+    warn "PRIVMSG ^^^";
 }
 
 sub IRCD_daemon_join {
@@ -171,7 +206,7 @@ sub IRCD_daemon_join {
         my $item = {
             action  => 'join',
             nick    => $nick,
-            target => "$$chan",
+            channel => "$$chan",
             ident   => $ident,
             host    => $host,
         };
@@ -198,7 +233,7 @@ sub IRCD_daemon_part {
         my $item = {
             action  => 'part',
             nick    => $nick,
-            target  => "$$chan",
+            channel => "$$chan",
             ident   => $ident,
             host    => $host,
         };

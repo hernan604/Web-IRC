@@ -6,4 +6,4 @@ export MOJO_LISTEN="http://*:8081"
 export DBIC_TRACE=1
 #perl -I../WI-WWW-Mojo/lib/ -I./lib myapp.pl
 source ../env_vars.sh
-perl -I../WI-Main/lib/ -I../WI-DB/lib/ -I./lib myapp.pl
+perl -I../WI-DB/lib/ -I./lib myapp.pl

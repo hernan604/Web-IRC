@@ -1,4 +1,4 @@
-% extends 'wrapper';
+    % extends 'wrapper';
 
 <script>
     window.jloader = new JooseLoader({
@@ -7,8 +7,10 @@
     jloader.load('MyApp');
     var mybase = new MyApp({
         deps : [
+            jloader.load('User'),
             jloader.load('ColLeft'),
             jloader.load('AppChatEvent'),
+            jloader.load('AppChatControlUserlist'),
         ]
     });
     mybase.init();
@@ -37,6 +39,7 @@
                 </div>
                 <div class="row content">
                     <div class="channel-list"></div>
+                    <div class="user-list"></div>
                 </div>
                 <div class='row footer title'>
                     Options

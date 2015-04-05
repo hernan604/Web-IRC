@@ -1,4 +1,4 @@
-Class('ColLeftChannel', {
+Class('ChannelList', {
 //  does : [ jloader.load('SomeRole') ],
     has : {
         app     : { is : "rw" },
@@ -25,8 +25,6 @@ Class('ColLeftChannel', {
         init: function () {
             var _this = this;
             $(document).ready(function () {
-                console.log( _this.col_middle );
-                console.log('ready');
                 jQuery.each( jQuery( _this.selectors, 'body' ) , function(i,item) {
                     var class_name = eval(_this.meta._name);
                     var instance = new class_name({
@@ -36,7 +34,7 @@ Class('ColLeftChannel', {
                     instance.start();
                     console.log( _this.app );
                     _this.app.instances.push( instance );
-                    _this.app.named_instances['ColLeftChannel'] = instance;
+                    _this.app.named_instances['ChannelList'] = instance;
                 }); 
             }); 
         },
@@ -62,8 +60,6 @@ Class('ColLeftChannel', {
                 ;
 
             this.elem.html( ul );
-        },
-        stop : function () {
         },
         modal_join_channel : function ( ev ) {
             var _this = this;
@@ -125,8 +121,6 @@ Class('ColLeftChannel', {
             } )
 
             rendered.modal('show'); 
-
-
         },
         add_chan : function (chan ) {
             var _this = this;
@@ -137,10 +131,8 @@ Class('ColLeftChannel', {
                 .attr( 'data-chan', chan )
                 .click( function ( ev ) { 
                     var target = $( ev.currentTarget );
-console.log('Clicked , ', target);
                     var chan_name = target.data('chan');
                     _this.activate( $( ev.currentTarget ) , chan_name );
-                    _this.hide_chans();
                     if ( _this.is_chan_open( chan_name ) ) {
                         console.log('show_chan');
                         var chan = _this.find_chan( chan_name );
@@ -151,11 +143,21 @@ console.log('Clicked , ', target);
                 } )
                 ;
         },
+        deactivate : function () {
+            console.log('ChannelList deactivate');
+            var _this = this;
+            _this.hide_chans();
+            $.each( $(_this.selectors).find('.active') , function ( i , item ) {
+                console.log($(item),'<- remove channel active');
+                $( item ).removeClass('active');
+            } )
+            _this.active = undefined;
+        },
         activate : function ( target, chan ) {
             var _this = this;
+            _this.app.named_instances['UserList'].deactivate();
+            _this.deactivate();
             $.each( target.parent().find('>li') , function ( i , item ) {
-                $( item ).removeClass('active');
-                console.log( $( item ).text(), chan );
                 if ( $( item ).data('chan') && $( item ).data('chan') == chan ) {
                     $( item ).addClass('active');
                     _this.setActive( chan );
@@ -164,22 +166,34 @@ console.log('Clicked , ', target);
             } )
         },
         is_chan_open : function ( chan ) {
-            return this.col_middle.find('[data-chan='+chan+']').length;
+            var _this = this;
+            return _this.col_middle.find('[data-chan='+chan+']').length;
         }, 
         find_chan: function ( chan ) {
-            return this.col_middle.find('[data-chan='+chan+']');
+            var _this = this;
+            return _this.col_middle.find('[data-chan='+chan+']');
         },
         hide_chans : function () {
-            $.each( this.col_middle.find( '[data-chan]' ) , function ( i, item ) {
+            var _this = this;
+            $.each( _this.col_middle.find( '[data-chan]' ) , function ( i, item ) {
                 $(item).hide();
             })
+        },
+        channel_dom : function ( channel ) {
+            var _this = this;
+            return $( '[data-chan='+(channel||_this.active)+']' );
+        },
+        current_channel_dom : function () {
+            var _this = this;
+            var current_channel = _this.active;
+            return $( '[data-chan='+current_channel+']' );
         },
         tpl_channel : function ( channel ) {
             return '\
             <div class="container-fluid">\
                 <div class="row header">\
                     <ul class="controls">\
-                        <li class="users">Users</li>\
+                        <li class="users"><span class="count"></span>Users</li>\
                     </ul>\
                 </div>\
                 <div class="row body">\
@@ -201,16 +215,7 @@ console.log('Clicked , ', target);
             ';
         },
         open_chan : function ( chan ) {
-            console.log('open_chan');
-            //build frame
             var _this = this;
-        //  var iframe = $('<iframe/>')
-        //      .attr('data-chan', chan)
-        //      .attr('src', '/chat/'+chan )
-        //      .appendTo( _this.col_middle.find('>.channels') )
-        //      .show()
-        //      ;
-            //1. tell the app this user has joined the channel
             $.ajax( {
                 url     : '/channel/join/'+chan.replace(/^#/,''),
                 cache   : true,
@@ -225,7 +230,6 @@ console.log('Clicked , ', target);
                             .show()
                             .html( _this.tpl_channel( chan ) )
                             ;
-                        _this.history( chan );
                     } else {
                         console.error( 'could not join chan: ' + chan );
                     }
@@ -233,41 +237,18 @@ console.log('Clicked , ', target);
                 type    : 'GET'
             } );
         },
-        history : function ( channel ) {
-            //1; get channel history
-            var _this = this;
-            var dt = new Date();
-try {
-            $.ajax({
-                url     : '/channel/history',
-                cache   : false,
-                success : function (data) {
-                    alert('history.... see console.log');
-                    console.log( data, '<- history' );
-                },
-                data    : JSON.stringify({
-                    id          : last_msg_id,
-                    channel     : channel,
-                }),
-                contentType   :'application/json',
-                dataType      :'json',
-                type          : 'PUT'
-            }); 
-} catch ( e) { console.log( "ERRROR -> ", e ); }
-            //2. prepend channel history in chan div
-        },
         event_message : function ( res ) {
             var _this = this ;
             console.log('event_message', res )
             console.log( _this.active );
-            if ( _this.active != res.target ) {
-                var $target = $('.channel-list [data-chan="'+res.target+'"]');
+            if ( _this.active != res.channel ) {
+                var $target = $('.channel-list [data-chan="'+res.channel+'"]');
                 _this.update_message_counter( $target );
             }
         },
         update_message_counter : function ( $elem ) {
             var _this = this;
-            console.log( ' update_message_coutner' );
+            console.log( ' update_message_coutner channel', $elem );
             var $elem_counter = $elem.find( '.message-counter' ); 
             var counter = ( $elem_counter.length ) 
                 ? ( function () {

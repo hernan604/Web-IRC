@@ -1,6 +1,6 @@
 package WI::Main::Controller::Channel;
 use base qw|Mojolicious::Controller|;
-use DOP;
+use DDP;
 
 sub list_users {
     my $self = shift;
@@ -20,7 +20,7 @@ sub list_users {
             ;
         $self->render( json => {
             status => 'OK',
-            result => $results,
+            results => $results,
         } );
     } );
 }
@@ -29,26 +29,32 @@ sub history {
     my $self = shift;
     $self->respond_to( json => sub {
         my $self = shift;
-warn p $self->req->json;
-warn "HISTORY ^^";
-warn "HISTORY ^^";
-warn "HISTORY ^^";
-warn "HISTORY ^^";
+        if ( ! $self->req->json 
+            || ! exists $self->req->json->{id} 
+            || ! defined $self->req->json->{id} 
+            || ! exists $self->req->json->{channel} 
+            || ! defined $self->req->json->{channel} 
+        ) {
+            return $self->render( json => { status => "ERROR" }, status => 500 );
+        }
         $self->req->json->{ channel } =
             '#'.$self->req->json->{ channel }
             if $self->req->json->{ channel } !~ m|^#|;
-        
-#       my $results = $self
-#           ->db
-#           ->user
-#           ->user_channel
-#           ->list_users( $self->req->json->{ channel } )
-#           ->hashes
-#           ->to_array
-#           ;
+
+        my $channel = $self->db->channel->find( { name => $self->req->json->{ channel } } );
+
+        my $results = $channel
+            ->log
+            ->history( { id => { '<' => $self->req->json->{ id } } } , { -asc => [ qw| id | ] } )
+            ;
+
+        $results = [ map {
+            $channel->log->find( { id => $_->{id} } )->to_ws_obj
+        } @{ $results->hashes->to_array } ];
+
         $self->render( json => {
             status => 'OK',
-#           result => $results,
+            results => $results,
         } );
     } );
 }

@@ -17,16 +17,19 @@ sub blpop_loop {
     my $timeout = 0;
     $self->app->redis->blpop( @keys, $timeout, sub {
         my ( $redis, $err, $res ) = @_;
+
         if ( defined $res 
              and ref $res eq ref [] 
              and scalar @{ $res } == 2 ) {
             my $queue   = $res->[0];
             my $val     = decode_json $res->[1];
 
-            $self->app->irc->process( $val )
-                if $queue eq 'main_incoming_irc'; 
-            $self->app->web->process( $val )
-                if $queue eq 'main_incoming_web';  
+            if ( $queue eq 'main_incoming_irc' ) {
+                $self->app->irc->process( $val );
+            }
+            if ( $queue eq 'main_incoming_web' ) {
+                $self->app->web->process( $val );
+            }
         }
         $self->blpop_loop;
     });

@@ -64,6 +64,11 @@ has sql => (
     }
 );
 
+sub everyone_status {
+    my $self = shift;
+    $self->pg->db->query('select username, status from "User"')->hashes->to_array;
+}
+
 sub migrate {
     my $self = shift;
     if ( $self->filepath_migrations ) {
