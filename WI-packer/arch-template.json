@@ -1,0 +1,90 @@
+{
+    "variables": {
+        "iso_url"           : "http://pet.inf.ufsc.br/mirrors/archlinux/iso/2015.04.01/archlinux-2015.04.01-dual.iso",
+        "iso_checksum"      : "a73ceb80938015e83586e04bf1111222",
+        "iso_checksum_type" : "md5"
+    },
+    "builders": [
+        {
+            "vboxmanage": [
+                ["modifyvm", "{{.Name}}", "--memory", "1536"],
+                ["modifyvm", "{{.Name}}", "--cpus", "4"]
+            ],
+            "name": "arch.amd64.virtualbox",
+            "type": "virtualbox-iso",
+            "iso_url": "{{user `iso_url`}}",
+            "iso_checksum": "{{user `iso_checksum`}}",
+            "iso_checksum_type": "{{user `iso_checksum_type`}}",
+            "guest_os_type": "ArchLinux_64",
+            "guest_additions_mode": "disable",
+            "http_directory": ".",
+            "boot_wait": "5s",
+            "boot_command": [
+                "<enter><wait10><wait10>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/install-virtualbox.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/poweroff.timer<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/packages.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/perlbrew.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/db.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/shutdown.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/boot_scripts.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/boot_scripts_wi.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/shutdown_scripts.sh<enter>",
+                "/usr/bin/bash ./install-virtualbox.sh<enter>"
+            ],
+            "disk_size": 20480,
+            "hard_drive_interface": "sata",
+            "ssh_username": "root",
+            "ssh_password": "vagrant",
+            "shutdown_command": "echo 'vagrant' | sudo -S -E shutdown -P now"
+        },
+        {
+            "type": "vmware-iso",
+            "iso_url": "{{user `iso_url`}}",
+            "iso_checksum": "{{user `iso_checksum`}}",
+            "iso_checksum_type": "{{user `iso_checksum_type`}}",
+            "http_directory": ".",
+            "boot_wait": "5s",
+            "boot_command": [
+                "<enter><wait10><wait10>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/install-vmware.sh<enter><wait5>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/poweroff.timer<enter><wait5>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/packages.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/perlbrew.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/db.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/shutdown.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/boot_scripts.sh<enter>",
+                "/usr/bin/curl -O http://{{.HTTPIP}}:{{.HTTPPort}}/shutdown_scripts.sh<enter>",
+                "/usr/bin/bash ./install-vmware.sh<enter>"
+            ],
+            "disk_size": 20480,
+            "ssh_username": "root",
+            "ssh_password": "vagrant",
+            "shutdown_command": "echo 'vagrant' | sudo -S -E shutdown -P now"
+        }
+    ],
+    "post-processors": [
+        {
+            "type": "vagrant",
+            "output": "packer_arch_{{.Provider}}.box"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "execute_command": "echo 'vagrant' | sudo -S -E sh {{.Path}}",
+            "override": {
+                "arch.amd64.virtualbox": {
+                    "scripts": [
+                        "./packages.sh",
+                        "./perlbrew.sh",
+                        "./db.sh",
+                        "./shutdown_scripts.sh",
+                        "./boot_scripts.sh",
+                        "./shutdown.sh"
+                    ]
+                }
+            }
+        }
+    ]
+}
