@@ -1,7 +1,6 @@
 SERVICE="rc-local.service"
 FILE="/usr/lib/systemd/system/$SERVICE"
 INIT_SCRIPT="/etc/rc.local"
-BOOT_SCRIPT_WI=$(cat boot_scripts_wi.sh)
 
 cat <<COMMANDS > $FILE
 [Unit]
@@ -21,7 +20,7 @@ cat <<INIT_SCRIPT_CONTENT > $INIT_SCRIPT
 
 echo boot time: \`date\` >> /home/vagrant/debug
 
-"$BOOT_SCRIPT_WI"
+$(cat boot_scripts_wi.sh)
 
 exit 0
 INIT_SCRIPT_CONTENT
