@@ -35,9 +35,7 @@ sub channel_list {
         my $channel_list = $get_channel_list->();
         if ( ! scalar @{ $channel_list } ) {
             my @initial_channels = (qw|#general|);
-            #set my initial list with everyone
-            $user->channels->set( $self->db->channel->all );
-            #TODO: Then control the frontend to make the user join all of these channels.
+            $user->channels->set( @initial_channels, $self->db->channel->all );
             $channel_list = $get_channel_list->();
         }
         $self->render( json => { results => $channel_list } );
