@@ -16,9 +16,18 @@ sub profile {
                 nick => $self->session('nick'),
             }
         );
+        my $channels = $self->ua->get(
+            $self->endpoint->{channel_list} => {
+                Accept => 'application/json' 
+            },
+            json => {
+                nick => $self->session('nick'),
+            }
+        );
         my $res = {
             nick => $self->session( 'nick' ),
             friends => $friends->res->json->{ results }, 
+            channels => $channels->res->json->{ results }, 
         };
         $self->render( json => $res );
     } );

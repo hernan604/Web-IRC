@@ -38,9 +38,13 @@ sub init_enpoint {
         channel_history => 'http://127.0.0.1:9999/v1/channel/history',
         private_history => 'http://127.0.0.1:9999/v1/private/history',
         everyone_status => 'http://127.0.0.1:9999/v1/everyone-status',
-        friend_list     => 'http://127.0.0.1:9999/v1/user/friend-list',
+        friend_list     => 'http://127.0.0.1:9999/v1/user/friend/list',
+        channel_list    => 'http://127.0.0.1:9999/v1/user/channel/list',
         user_friend_add => 'http://127.0.0.1:9999/v1/user/friend/add',
         user_friend_del => 'http://127.0.0.1:9999/v1/user/friend/del',
+        validate_credentials => 'http://127.0.0.1:9999/v1/auth/validate_credentials',
+        is_username_avaliable => 'http://127.0.0.1:9999/v1/auth/is_username_avaliable',
+        user_register => 'http://127.0.0.1:9999/v1/auth/user_register',
     }} );
 }
 
@@ -85,10 +89,10 @@ sub startup {
       ->to( controller => 'Channel', action => 'list_users' );
 
     $r->route('/channel/join/:channel')->name('join')
-      ->to( controller => 'Chat', action => 'join' );
+      ->to( controller => 'Chat', action => 'user_join' );
 
     $r->route('/channel/part/:channel')->name('part')
-      ->to( controller => 'Chat', action => 'part' );
+      ->to( controller => 'Chat', action => 'user_part' );
 
     $r->route('/user/profile')->name('user_profile')
       ->to( controller => 'User', action => 'profile' );

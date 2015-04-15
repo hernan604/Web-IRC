@@ -42,6 +42,7 @@ sub _web {
     my $web = WI::Main::WEB->new( _ref_main => $self );
     $self->helper( web => sub { $web } );
 }
+
 sub _db {
     my $self = shift;
     my $pg = Mojo::Pg->new( $ENV{WI_MOJO_PG_DSN} );
@@ -68,6 +69,21 @@ sub init_routes {
     my $r = $self->routes;
     $r->namespaces(['WI::Main::Controller']);
 
+    $r->route( '/v1/auth/is_username_avaliable' )
+        ->name( 'is_username_avaliable' )
+        ->to( controller => 'Auth', action => 'is_username_avaliable' )
+        ;
+
+    $r->route( '/v1/auth/validate_credentials' )
+        ->name( 'validate_credentials' )
+        ->to( controller => 'Auth', action => 'validate_credentials' )
+        ;
+
+    $r->route( '/v1/auth/user_register' )
+        ->name( 'user_register' )
+        ->to( controller => 'Auth', action => 'user_register' )
+        ;
+
     $r->route( '/v1/channel/list_users' )
         ->name( 'channel_list_users' )
         ->to( controller => 'Channel', action => 'list_users' )
@@ -88,9 +104,14 @@ sub init_routes {
         ->to( controller => 'User', action => 'everyone_status' )
         ;
 
-    $r->route( '/v1/user/friend-list' )
+    $r->route( '/v1/user/friend/list' )
         ->name( 'friend_list' )
         ->to( controller => 'User', action => 'friend_list' )
+        ;
+
+    $r->route( '/v1/user/channel/list' )
+        ->name( 'channel_list' )
+        ->to( controller => 'User', action => 'channel_list' )
         ;
 
     $r->route( '/v1/user/friend/add' )

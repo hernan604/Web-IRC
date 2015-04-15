@@ -18,7 +18,10 @@ has user_channel => (
     is      => 'lazy',
     default => sub {
         my $self = shift;
-        return WI::DB::UserChannel->new( app => $self->app );
+        return WI::DB::UserChannel->new( 
+            app => $self->app ,
+            user => $self,
+        );
     }
 );
 
@@ -29,7 +32,6 @@ has friends => (
         return WI::DB::UserFriend->new( app => $self->app, parent => $self );
     }
 );
-
 
 has private_message_log => (
     is      => 'lazy',
@@ -51,7 +53,7 @@ sub join {
     my $channel = shift;
     my $source = shift; #web or irc
     warn "WARNING: user->join missing source" and return if ( ! $source );
-    $self->user_channel->join( $self, $channel, $source );
+    $self->user_channel->_join( $self, $channel, $source );
 }
 
 sub part {
@@ -59,7 +61,18 @@ sub part {
     my $channel = shift;
     my $source = shift; #web or irc
     warn "WARNING: user->join missing source" and return if ( ! $source );
-    $self->user_channel->part( $self, $channel, $source );
+    $self->user_channel->_part( $self, $channel, $source );
 }
+
+sub channels {
+    my $self = shift;
+    $self->user_channel;
+}
+
+sub everyone_status {
+    my $self = shift;
+    $self->app->pg->db->query('select username, status from "User"')->hashes->to_array;
+}
+
     
 1;

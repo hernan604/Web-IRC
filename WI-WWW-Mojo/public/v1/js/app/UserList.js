@@ -79,7 +79,6 @@ Class('UserList', {
             $markup.find('.remove').click( function ( ev ) {
                 var $target = $( ev.currentTarget );
                 _this.remove_friend(
-                    $target.closest('[data-user]'),
                     $target.closest('[data-user]').data( 'user' ) 
                 );
                 //remove element from markup
@@ -89,9 +88,10 @@ Class('UserList', {
             });
             return $markup;
         },
-        remove_friend : function ( $target, nick ) {
+        remove_friend : function ( nick ) {
             var _this = this;
-            $target.remove();
+            _this.user_ul.find('[data-user='+nick+']').remove();
+            _this.col_middle.find('[data-user='+nick+']').remove();
             $.ajax({
                 url     : '/user/friend/del',
                 cache   : false,
@@ -108,6 +108,7 @@ Class('UserList', {
         },
         add_friend : function ( nick ) {
             var _this = this;
+            if ( _this.app.named_instances[ 'User' ].nick == nick ) return;
             $.ajax({
                 url     : '/user/friend/add',
                 cache   : false,

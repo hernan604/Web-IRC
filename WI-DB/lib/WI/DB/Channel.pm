@@ -39,4 +39,10 @@ sub list_users {
     } );
 }
 
+sub all {
+    my $self = shift;
+    my $channels = $self->app->pg->db->query('select name as channel from "Channel"')->hashes->to_array;
+    [ map { $_->{ channel } } @{ $channels } ];
+}
+
 1;

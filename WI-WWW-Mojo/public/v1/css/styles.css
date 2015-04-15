@@ -287,7 +287,8 @@ ul#log li > span.username {
     display: inline-block;
 }
 
-.user-list [data-user] .remove {
+.user-list [data-user] .remove ,
+.channel-list [data-chan] .remove {
     background: #CCC;
     width: 20px;
     height: 20px;
@@ -295,6 +296,7 @@ ul#log li > span.username {
     right: 5px;
 }
 
+.channel-list [data-chan] .remove:after ,
 .user-list [data-user] .remove:after {
     color: #000000;
     content: "X";

@@ -13,6 +13,7 @@ Class('ColLeft', {
                 return [
                     jloader.load('ChannelList'),
                     jloader.load('UserList'),
+                    jloader.load('UserOption'),
                 ]
             } )()
         },

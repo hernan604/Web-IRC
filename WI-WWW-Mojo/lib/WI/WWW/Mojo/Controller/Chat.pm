@@ -10,7 +10,7 @@ use Encode qw(decode encode);
 #use strict;
 #use warnings;
 
-sub join {
+sub user_join {
     my $self = shift;
     my $nick = $self->session('nick');
     my $chan = '#'.$self->param('channel');
@@ -25,7 +25,7 @@ sub join {
     $self->render( json => { status => 'OK' } );
 }
 
-sub part {
+sub user_part {
     my $self = shift;
     my $nick = $self->session('nick');
     my $chan = '#'.$self->param('channel');
@@ -33,7 +33,7 @@ sub part {
     my $queue = $self->app->queue->{main_incoming_web};
     $self->app->redis->rpush( $queue, encode_json {
         action  => 'part',
-        channel  => $chan,
+        channel => $chan,
         nick    => $nick,
     } );
     $self->render( json => { status => 'OK' } );

@@ -5,6 +5,7 @@ Class("User", {
         profile         : { is : 'rw' },
         everyone_status : { is : 'rw' },
         friends         : { is : 'rw' , init: ( function () { return [] } )()},
+        channels        : { is : 'rw' , init: ( function () { return [] } )()},
     },
     methods : {
         get_info : function () {
@@ -16,6 +17,7 @@ Class("User", {
                 success : function (data) {
                     _this.setNick( data.nick );
                     _this.setFriends( data.friends );
+                    _this.setChannels( data.channels );
 //                  console.log( data.profile , '<- profile' );
                 },
                 contentType : 'application/json',
@@ -23,7 +25,6 @@ Class("User", {
                 type        : 'GET'
             }); 
         },
-
         init : function () { 
             this.app.named_instances.User = this;
             this.get_info();

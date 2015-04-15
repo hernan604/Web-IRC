@@ -56,6 +56,14 @@ has channel => (
     }
 );
 
+has user_channel => (
+    is => 'rw',
+    default => sub {
+        my $self = shift;
+        WI::DB::UserChannel->new( app => $self );
+    }
+);
+
 has sql => (
     is => 'rw',
     default => sub {
@@ -64,10 +72,6 @@ has sql => (
     }
 );
 
-sub everyone_status {
-    my $self = shift;
-    $self->pg->db->query('select username, status from "User"')->hashes->to_array;
-}
 
 sub migrate {
     my $self = shift;

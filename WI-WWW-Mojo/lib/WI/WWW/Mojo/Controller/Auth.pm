@@ -27,9 +27,14 @@ sub do_login {
         and return
         if ! $self->validate;
 
+    my $req = $self->ua->get( 
+        $self->endpoint->{validate_credentials} => { Accept => 'application/json' }, 
+        json => $self->req->json 
+    );
     $self->render_errors( [ 'Wrong username or password' ] )
         and return 
-        if ! $self->db->auth->validate_credentials( $self->req->json );
+        if ! lc $req->res->json->{status} eq 'ok';
+
 
     $self->session({ nick => $self->req->json->{ username } }); 
 
@@ -75,8 +80,16 @@ sub signup {
                 if !$self->validate_signup;
             my $new_user = $self->req->json;
             my $success = 0;
-            if ( $self->db->registration->is_avaliable( $new_user ) ) {
-                $success = $self->db->registration->register( $new_user );
+            my $req = $self->ua->get( 
+                $self->endpoint->{is_username_avaliable} , 
+                { Accept => 'application/json' },
+                json => $self->req->json
+            );
+            if ( $req->res->json->{ is_avaliable } ) {
+                $req = $self->ua->get( $self->endpoint->{user_register} => { 
+                    Accept => 'application/json' 
+                }, json => $self->req->json );
+                $success = $req->res->json->{ success };
             } else {
                 push @{ $errors }, 'Username or email already taken.';
             }

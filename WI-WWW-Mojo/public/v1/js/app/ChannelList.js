@@ -46,7 +46,7 @@ Class('ChannelList', {
             //this.elem.html( "(ClassTest2 + ClassTest1Dep1)" );
             var ul = $('<ul/>');
             _this.setChannel_ul( ul );
-            var channels = ['#systems','#padrao','#teste','#apps'];
+            var channels = _this.app.named_instances.User.channels;
             for ( var i = 0, chan; chan = channels[i] ; i++ ) {
                 _this.add_chan( chan );
             }
@@ -125,10 +125,14 @@ Class('ChannelList', {
         add_chan : function (chan ) {
             var _this = this;
             var ul = _this.channel_ul;
-            var li = $('<li/>');
-            li.html( chan )
+            var tpl= '<li data-chan="{{chan}}"><span class="remove"></span>{{chan}}</li>';
+            var $markup = _this.bind_events( $( Mustache.render( tpl, {chan:chan} ) ) );
+            $markup
                 .appendTo( ul )
-                .attr( 'data-chan', chan )
+        },
+        bind_events : function ( $markup ) {
+            var _this = this;
+            $markup
                 .click( function ( ev ) { 
                     var target = $( ev.currentTarget );
                     var chan_name = target.data('chan');
@@ -142,6 +146,34 @@ Class('ChannelList', {
                     }
                 } )
                 ;
+            $markup.find('.remove').click( function ( ev ) {
+                var $target = $( ev.currentTarget );
+                //$target.closest('[data-user]').remove();
+                _this.remove_channel_autojoin( $target.closest('[data-chan]').data( 'chan' ) );
+                //remove element from markup
+                //remove nick from friendlist
+                ev.preventDefault();
+                ev.stopPropagation();
+            });
+            return $markup;
+        },
+        part : function ( channel ) {
+            var _this = this;
+            $.ajax({
+                url     : '/channel/part/'+channel.replace(/^#/,''),
+                cache   : false,
+                success : function (data) {
+                },
+                contentType : 'application/json',
+                dataType    : 'json',
+                type        : 'GET',
+            });
+        },
+        remove_channel_autojoin : function (channel) {
+            var _this = this;
+            _this.col_middle.find( '[chan=' + channel + ']' ).remove();
+            _this.channel_ul.find( '[data-chan=' + channel + ']' ).remove();
+            _this.part( channel );
         },
         deactivate : function () {
             console.log('ChannelList deactivate');
